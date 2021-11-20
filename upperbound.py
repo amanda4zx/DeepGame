@@ -5,13 +5,13 @@ from CompetitiveMCTS import *
 from CooperativeMCTS import *
 
 
-def upperbound(dataSetName, bound, tau, gameType, image_index, eta):
+def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type):
     start_time = time.time()
 
     MCTS_all_maximal_time = 300
     MCTS_level_maximal_time = 60
 
-    NN = NeuralNetwork(dataSetName)
+    NN = NeuralNetwork(dataSetName, network_type)
     NN.load_network()
     print("Dataset is %s." % NN.data_set)
     NN.model.summary()

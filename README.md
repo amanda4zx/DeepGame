@@ -57,7 +57,7 @@ scipy 1.1.0
 
 # Run
 ```
-python main.py mnist ub cooperative 67 L2 10 1
+python main.py mnist ub cooperative 67 L2 10 1 self_attn
 ```
 or
 ```

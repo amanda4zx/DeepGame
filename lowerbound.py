@@ -16,8 +16,8 @@ from NeuralNetwork import *
 from DataSet import *
 
 
-def lowerbound(dataset_name, image_index, game_type, eta, tau):
-    NN = NeuralNetwork(dataset_name)
+def lowerbound(dataset_name, image_index, game_type, eta, tau, network_type):
+    NN = NeuralNetwork(dataset_name, network_type)
     NN.load_network()
     print("Dataset is %s." % NN.data_set)
     NN.model.summary()

@@ -53,7 +53,9 @@ def mergeTwoDicts(x, y):
     return z
 
 
+# Print progress in games
 def nprint(str):
+    print(str)
     return 0
 
 

@@ -12,7 +12,7 @@ from lowerbound import lowerbound
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # the first way of defining parameters
-if len(sys.argv) == 8:
+if len(sys.argv) == 9:
 
     if sys.argv[1] == 'mnist' or sys.argv[1] == 'cifar10' or sys.argv[1] == 'gtsrb':
         dataSetName = sys.argv[1]
@@ -56,6 +56,12 @@ if len(sys.argv) == 8:
     else:
         print("please specify as the 7th argument the tau: [int/float]")
         exit
+    
+    if sys.argv[8] == 'seq' or sys.argv[8] == 'self_attn' or sys.argv[8] == 'cbam_spatial_attn':
+        network_type = sys.argv[8]
+    else:
+        print("please specify as the 8th argument the type of neural network: seq for Sequential, self_attn for dot-product self attention, cbam_spatial_attn for spatial attention in CBAM")
+        exit
 
 elif len(sys.argv) == 1:
     # the second way of defining parameters
@@ -65,6 +71,7 @@ elif len(sys.argv) == 1:
     image_index = 213
     eta = ('L2', 10)
     tau = 1
+    network_type = 'seq'
 
 # calling algorithms
 # dc = DataCollection("%s_%s_%s_%s_%s_%s_%s" % (dataSetName, bound, tau, gameType, image_index, eta[0], eta[1]))
@@ -72,7 +79,7 @@ elif len(sys.argv) == 1:
 
 if bound == 'ub':
     (elapsedTime, newConfident, percent, l2dist, l1dist, l0dist, maxFeatures) = upperbound(dataSetName, bound, tau,
-                                                                                           gameType, image_index, eta)
+                                                                                           gameType, image_index, eta, network_type)
 
     # dc.addRunningTime(elapsedTime)
     # dc.addConfidence(newConfident)
@@ -83,7 +90,7 @@ if bound == 'ub':
     # dc.addMaxFeatures(maxFeatures)
 
 elif bound == 'lb':
-    lowerbound(dataSetName, image_index, gameType, eta, tau)
+    lowerbound(dataSetName, image_index, gameType, eta, tau, network_type)
 
 else:
     print("Unrecognised bound setting.\n"

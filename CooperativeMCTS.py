@@ -1,4 +1,4 @@
-5  # !/usr/bin/env python
+# !/usr/bin/env python
 
 """
 A data structure for organising search
@@ -64,7 +64,7 @@ class MCTSCooperative:
         self.indexToActionID = {}
 
         # best case
-        self.bestCase = (2 ^ 20, {})
+        self.bestCase = (2 ** 20, {})
         self.numConverge = 0
 
         # number of adversarial examples
@@ -188,7 +188,7 @@ class MCTSCooperative:
         (newClass0, newConfident0) = self.model.predict(activations0)
         activations1 = self.moves.applyManipulation(self.image, newAtomicManipulation)
         (newClass1, newConfident1) = self.model.predict(activations1)
-        if abs(newConfident0 - newConfident1) < 10 ^ -6:
+        if abs(newConfident0 - newConfident1) < 10 ** -6:
             return False
         else:
             return True
