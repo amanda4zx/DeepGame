@@ -58,11 +58,11 @@ def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type
                 currentBest = mctsInstance.bestCase[0]
             bestChild = mctsInstance.bestChild(mctsInstance.rootIndex)
 
-            # store the current best
-            (_, bestManipulation) = mctsInstance.bestCase
-            image1 = mctsInstance.applyManipulation(bestManipulation)
-            path0 = "%s_pic/%s_Unsafe_currentBest.png" % (dataSetName, image_index)
-            NN.save_input(image1, path0)
+            # # store the current best
+            # (_, bestManipulation) = mctsInstance.bestCase
+            # image1 = mctsInstance.applyManipulation(bestManipulation)
+            # path0 = "%s_pic/%s_Unsafe_currentBest.png" % (dataSetName, image_index)
+            # NN.save_input(image1, path0)
 
             runningTime_all = time.time() - start_time_all
             runningTime_level = time.time() - start_time_level
