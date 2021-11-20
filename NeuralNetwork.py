@@ -22,6 +22,7 @@ from tensorflow.keras.preprocessing import image as Image
 from basics import assure_path_exists
 from SequentialNetwork import *
 from SelfAttentionNetwork import *
+from CBAMSpatialAttentionNetwork import *
 # from DataSet import *
 
 
@@ -47,6 +48,8 @@ class NeuralNetwork:
             network = SequentialNetwork(self.data_set)
         elif self.network_type == 'self_attn':
             network = SelfAttentionNetwork(self.data_set)
+        elif self.network_type == 'cbam_spatial_attn':
+            network = CBAMSpatialAttentionNetwork(self.data_set)
         
         network.train()
         self.model = network.model
