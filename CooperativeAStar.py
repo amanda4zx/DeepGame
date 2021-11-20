@@ -148,7 +148,7 @@ class CooperativeAStar:
                 self.target_pixels(new_image, pixels)
 
             self.ADV_MANIPULATION = min(self.DIST_EVALUATION, key=self.DIST_EVALUATION.get)
-            print("Current best manipulations:", self.ADV_MANIPULATION)
+            # print("Current best manipulations:", self.ADV_MANIPULATION)
             # print("%s distance (estimated): %s" % (self.DIST_METRIC, self.DIST_EVALUATION[self.ADV_MANIPULATION]))
             self.DIST_EVALUATION.pop(self.ADV_MANIPULATION)
 
@@ -157,7 +157,7 @@ class CooperativeAStar:
             for atomic in atomic_list:
                 valid, new_image = self.apply_atomic_manipulation(new_image, atomic)
             dist = self.cal_distance(self.IMAGE, new_image)
-            print("%s distance (actual): %s" % (self.DIST_METRIC, dist))
+            # print("%s distance (actual): %s" % (self.DIST_METRIC, dist))
 
             new_label, new_confidence = self.MODEL.predict(new_image)
             if self.cal_distance(self.IMAGE, new_image) > self.DIST_VAL:
@@ -172,7 +172,10 @@ class CooperativeAStar:
 
             if self.CURRENT_SAFE[-1] != dist:
                 self.CURRENT_SAFE.append(dist)
-                path = "%s_pic/idx_%s_Safe_currentBest_%s.png" % (self.DATASET, self.IDX, len(self.CURRENT_SAFE) - 1)
+                print("%s distance (actual): %s" % (self.DIST_METRIC, dist))
+                print("Current best manipulations:", self.ADV_MANIPULATION)
+                path = "%s_pic/idx_%s_Safe_currentBest.png" % (self.DATASET, self.IDX)
+                # path = "%s_pic/idx_%s_Safe_currentBest_%s.png" % (self.DATASET, self.IDX, len(self.CURRENT_SAFE) - 1)
                 self.MODEL.save_input(new_image, path)
 
 

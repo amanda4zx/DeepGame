@@ -284,7 +284,11 @@ class MCTSCooperative:
         # need not only class change, but also high confidence adversary examples
         if newClass != self.originalClass and newConfident > effectiveConfidenceWhenChanging:
             nprint("sampling a path ends in a terminal node with depth %s... " % self.depth)
+
             self.atomicManipulationPath = self.scrutinizePath(self.atomicManipulationPath)
+            activations1 = self.moves.applyManipulation(self.image, self.atomicManipulationPath)
+            dist = self.computeDistance(activations1)
+            
             self.numAdv += 1
             nprint("current best %s, considered to be replaced by %s" % (self.bestCase[0], dist))
             if self.bestCase[0] > dist:
@@ -347,7 +351,7 @@ class MCTSCooperative:
             tempManipulations[k] = 0
             activations1 = self.moves.applyManipulation(self.image, tempManipulations)
             (newClass, newConfident) = self.model.predict(activations1)
-            if newClass != self.originalClass:
+            if newClass != self.originalClass and newConfident > effectiveConfidenceWhenChanging:
                 manipulations.pop(k)
                 flag = True
                 break
