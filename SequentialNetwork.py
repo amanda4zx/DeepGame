@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D
+from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D, Softmax
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
@@ -48,7 +48,8 @@ class SequentialNetwork(object):
                 Dense(200, activation='relu'),
                 Dropout(0.5),
                 Dense(200, activation='relu'),
-                Dense(num_classes, activation='softmax')
+                Dense(num_classes, activation=None),
+                Softmax()
             ])
 
             model.summary()
@@ -102,7 +103,8 @@ class SequentialNetwork(object):
                 Dense(256, activation='relu'),
                 Dropout(0.5),
                 Dense(256, activation='relu'),
-                Dense(num_classes, activation='softmax')
+                Dense(num_classes, activation=None),
+                Softmax()
             ])
 
             model.summary()
@@ -171,7 +173,8 @@ class SequentialNetwork(object):
                 Dense(256,activation='relu'),
                 Dropout(0.5),
                 Dense(256, activation='relu'),
-                Dense(num_classes, activation='softmax')
+                Dense(num_classes, activation=None),
+                Softmax()
             ])
 
             model.summary()
@@ -218,13 +221,3 @@ class SequentialNetwork(object):
         else:
             print("Unsupported dataset %s. Try 'mnist' or 'cifar10' or 'gtsrb'." % self.data_set)
             return
-
-# 100 epochs
-# Test loss: 0.1867835521697998
-# Test accuracy: 0.9430000185966492
-
-# nn = NeuralNetwork('cifar10')
-# nn.train_network()
-# 50 epochs
-# Test loss: 0.6120467782020569
-# Test accuracy: 0.7926999926567078

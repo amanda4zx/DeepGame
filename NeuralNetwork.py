@@ -135,7 +135,10 @@ class NeuralNetwork:
         # func = K.function([model.layers[0].input] + [K.learning_phase()],
         #                   [model.layers[model.layers.__len__() - 1].output.op.inputs[0]])
 
-        partial_model = keras.Model(model.inputs, model.layers[model.layers.__len__() - 1].output.op.inputs[0])
+        # partial_model = keras.Model(model.inputs, model.layers[model.layers.__len__() - 1].output.op.inputs[0])
+        # Assume that the last layer is Softmax()
+        partial_model = keras.Model(model.inputs, model.layers[model.layers.__len__() - 1].output)
+        partial_model.summary()
 
         if len(manipulated_images) >= batch_size:
             softmax_logits = []
@@ -149,7 +152,8 @@ class NeuralNetwork:
             logits = partial_model.predict(manipulated_images[batch * batch_size:len(manipulated_images)])
             softmax_logits = np.concatenate((softmax_logits, logits), axis=0)
         else:
-            softmax_logits = func([manipulated_images, 0])[0]
+            # softmax_logits = func([manipulated_images, 0])[0]
+            softmax_logits = partial_model.predict(manipulated_images)
 
         # softmax_logits = func([manipulated_images, 0])[0]
         # print(softmax_logits.shape)

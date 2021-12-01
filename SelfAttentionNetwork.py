@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D, BatchNormalization
+from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D, BatchNormalization, Softmax
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 class SelfAttentionNetwork(object):
@@ -46,7 +46,8 @@ class SelfAttentionNetwork(object):
             dense1 = Dense(200, activation='relu')(flat)
             drop = Dropout(0.5)(dense1)
             dense2 = Dense(200, activation='relu')(drop)
-            output = Dense(num_classes, activation='softmax')(dense2)
+            dense3 = Dense(num_classes, activation=None)(dense2)
+            output = Softmax()(dense3)
 
             model = keras.Model(inputs = input, outputs = output)
             
@@ -101,8 +102,3 @@ def AugmentedConv2D(filters, kernel_size, activation, dk, dv):
         attn = SelfAttn(dk, dv)(inputs)
         return tf.concat([conv, attn], axis = 3)
     return aug_conv2d_on
-
-# mnist
-# 50 epochs
-# Test loss: 0.2754996418952942
-# Test accuracy: 0.9175999760627747

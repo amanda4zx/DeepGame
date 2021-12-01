@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D, Add
+from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D, Add, Softmax
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
@@ -45,7 +45,8 @@ class CBAMSpatialAttentionNetwork(object):
             dense1 = Dense(200, activation='relu')(flat)
             drop = Dropout(0.5)(dense1)
             dense2 = Dense(200, activation='relu')(drop)
-            output = Dense(num_classes, activation='softmax')(dense2)
+            dense3 = Dense(num_classes, activation=None)(dense2)
+            output = Softmax()(dense3)
 
             model = keras.Model(inputs = input, outputs = output)
             
@@ -88,8 +89,3 @@ def SpatialModule():
         outputs = tf.multiply(inputs, broadcast) # Element-wise multiplication
         return outputs
     return spatial_module_on
-
-# mnist
-# 50 epochs
-# Test loss: 0.2611531615257263
-# Test accuracy: 0.92330002784729
