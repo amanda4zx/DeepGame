@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D, BatchNormalization, Softmax
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+# from tensorflow.keras.utils import plot_model
 
 class SelfAttentionNetwork(object):
     # Specify which dataset at initialisation.
@@ -18,6 +19,8 @@ class SelfAttentionNetwork(object):
             num_classes = 10
             epochs = 50
             img_rows, img_cols = 28, 28
+            k = 1 # dk / F_out, where F_out = number of channels output by an attention-augmented layer
+            v = 1 # dv / F_out
 
             (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
@@ -35,12 +38,15 @@ class SelfAttentionNetwork(object):
             y_test = keras.utils.to_categorical(y_test, num_classes)
 
             input = keras.Input(shape=input_shape)
-            conv1 = Conv2D(32, (3, 3), activation='relu', input_shape=input_shape)(input)
-            conv2 = Conv2D(32, (3, 3), activation='relu')(conv1)
+            conv1 = AugmentedConv2D((int)(32 * (1 - v)), (3, 3), activation='relu', dk = (int)(32 * k), dv = (int)(32 * v))(input)
+            conv1 = BatchNormalization()(conv1) # apply batch normalisation after augmented conv as described in the paper
+            conv2 = AugmentedConv2D((int)(32 * (1 - v)), (3, 3), activation='relu', dk = (int)(32 * k), dv = (int)(32 * v))(conv1)
+            conv2 = BatchNormalization()(conv2)
             pool1 = MaxPooling2D(pool_size=(2, 2))(conv2)
-            conv3 = AugmentedConv2D(64, (3, 3), activation='relu', dk = 8, dv = 8)(pool1)
-            # conv3 = BatchNormalization()(conv3) # apply batch normalisation after augmented conv as described in the paper
-            conv4 = Conv2D(64, (3, 3), activation='relu')(conv3)
+            conv3 = AugmentedConv2D((int)(64 * (1 - v)), (3, 3), activation='relu', dk = (int)(64 * k), dv = (int)(64 * v))(pool1)
+            conv3 = BatchNormalization()(conv3)
+            conv4 = AugmentedConv2D((int)(64 * (1 - v)), (3, 3), activation='relu', dk = (int)(64 * k), dv = (int)(64 * v))(conv3)
+            conv4 = BatchNormalization()(conv4) 
             pool2 = MaxPooling2D(pool_size=(2, 2))(conv4)
             flat = Flatten()(pool2)
             dense1 = Dense(200, activation='relu')(flat)
@@ -52,6 +58,7 @@ class SelfAttentionNetwork(object):
             model = keras.Model(inputs = input, outputs = output)
             
             model.summary()
+            # plot_model(model, to_file='mnist_self_attn.png')
 
             model.compile(loss='categorical_crossentropy',
                           optimizer=keras.optimizers.Adadelta(),
@@ -96,9 +103,13 @@ def SelfAttn(dk, dv):
         return attn_out
     return self_attn_on
 
+# convolutional layer with filters filters, augmented by attention module whose output has dv channels
 def AugmentedConv2D(filters, kernel_size, activation, dk, dv):
     def aug_conv2d_on(inputs):
-        conv = Conv2D(filters=filters, kernel_size=kernel_size, activation=activation, padding='same')(inputs)
-        attn = SelfAttn(dk, dv)(inputs)
-        return tf.concat([conv, attn], axis = 3)
+        if filters > 0:
+            conv = Conv2D(filters=filters, kernel_size=kernel_size, activation=activation, padding='same')(inputs)
+            attn = SelfAttn(dk, dv)(inputs)
+            return tf.concat([conv, attn], axis = 3)
+        else:
+            return SelfAttn(dk, dv)(inputs)
     return aug_conv2d_on

@@ -3,6 +3,7 @@ from NeuralNetwork import *
 from DataSet import *
 from CompetitiveMCTS import *
 from CooperativeMCTS import *
+# import numpy as np
 
 
 def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type):
@@ -20,8 +21,15 @@ def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type
     image = dataset.get_input(image_index)
     (label, confident) = NN.predict(image)
     origClassStr = NN.get_label(int(label))
+    # groundTruth = dataset.get_output(image_index)
+    # groundTruthClass = np.argmax(np.ravel(groundTruth))
+    # trueClassStr = NN.get_label(int(groundTruthClass))
     print("Working on input with index %s, whose class is '%s' and the confidence is %s."
           % (image_index, origClassStr, confident))
+    # print("The ground truth class is '%s'." % trueClassStr)
+    # if origClassStr != trueClassStr:
+    #     print("The classification does not match the ground truth.")
+    #     return
     print("the second player is %s." % gameType)
 
     # tau = 1

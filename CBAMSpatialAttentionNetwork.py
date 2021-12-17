@@ -4,6 +4,7 @@ from tensorflow import keras
 from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D, Add, Softmax
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+# from tensorflow.keras.utils import plot_model
 
 class CBAMSpatialAttentionNetwork(object):
     def __init__(self, data_set):
@@ -35,12 +36,19 @@ class CBAMSpatialAttentionNetwork(object):
 
             input = keras.Input(shape=input_shape)
             conv1 = Conv2D(32, (3, 3), activation='relu', input_shape=input_shape)(input)
-            conv2 = Conv2D(32, (3, 3), activation='relu')(conv1)
-            pool1 = MaxPooling2D(pool_size=(2, 2))(conv2)
-            attn = SpatialModule()(pool1)
-            res = Add()([pool1, attn]) # Residual connection
-            conv4 = Conv2D(64, (3, 3), activation='relu')(res)
-            pool2 = MaxPooling2D(pool_size=(2, 2))(conv4)
+            attn1 = SpatialModule()(conv1)
+            res1 = Add()([conv1, attn1]) # Residual connection
+            conv2 = Conv2D(32, (3, 3), activation='relu')(res1)
+            attn2 = SpatialModule()(conv2)
+            res2 = Add()([conv2, attn2])
+            pool1 = MaxPooling2D(pool_size=(2, 2))(res2)
+            conv3 = Conv2D(64, (3, 3), activation='relu')(pool1)
+            attn3 = SpatialModule()(conv3)
+            res3 = Add()([conv3, attn3])
+            conv4 = Conv2D(64, (3, 3), activation='relu')(res3)
+            attn4 = SpatialModule()(conv4)
+            res4 = Add()([conv4, attn4])
+            pool2 = MaxPooling2D(pool_size=(2, 2))(res4)
             flat = Flatten()(pool2)
             dense1 = Dense(200, activation='relu')(flat)
             drop = Dropout(0.5)(dense1)
@@ -51,6 +59,7 @@ class CBAMSpatialAttentionNetwork(object):
             model = keras.Model(inputs = input, outputs = output)
             
             model.summary()
+            # plot_model(model, to_file='mnist_cbam_spatial_attn.png')
 
             model.compile(loss='categorical_crossentropy',
                           optimizer=keras.optimizers.Adadelta(),

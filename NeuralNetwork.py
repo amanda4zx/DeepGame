@@ -136,9 +136,11 @@ class NeuralNetwork:
         #                   [model.layers[model.layers.__len__() - 1].output.op.inputs[0]])
 
         # partial_model = keras.Model(model.inputs, model.layers[model.layers.__len__() - 1].output.op.inputs[0])
+
         # Assume that the last layer is Softmax()
-        partial_model = keras.Model(model.inputs, model.layers[model.layers.__len__() - 1].output)
-        partial_model.summary()
+        partial_model = keras.Model(model.inputs, model.layers[model.layers.__len__() - 2].output)
+        # print("Extracted partial model for softmax logits")
+        # partial_model.summary()
 
         if len(manipulated_images) >= batch_size:
             softmax_logits = []
@@ -158,3 +160,6 @@ class NeuralNetwork:
         # softmax_logits = func([manipulated_images, 0])[0]
         # print(softmax_logits.shape)
         return softmax_logits
+
+# nn = NeuralNetwork('mnist', 'self_attn')
+# nn.train_network()

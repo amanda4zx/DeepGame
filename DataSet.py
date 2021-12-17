@@ -130,6 +130,9 @@ class DataSet:
     def get_input(self, index):
         return self.x[index]
 
+    def get_output(self, index):
+        return self.y[index]
+
     def preprocess_img(self, img, img_rows, img_cols):
         # Histogram normalization in y
         hsv = color.rgb2hsv(img)
