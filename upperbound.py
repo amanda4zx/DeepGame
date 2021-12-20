@@ -9,7 +9,7 @@ from CooperativeMCTS import *
 def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type):
     start_time = time.time()
 
-    MCTS_all_maximal_time = 300
+    MCTS_all_maximal_time = 600
     MCTS_level_maximal_time = 60
 
     NN = NeuralNetwork(dataSetName, network_type)
@@ -44,36 +44,41 @@ def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type
         start_time_level = time.time()
         runningTime_level = 0 
         currentBest = eta[1]
-        while runningTime_all <= MCTS_all_maximal_time:
-        
-            '''
-            if runningTime_level > MCTS_level_maximal_time: 
+
+        try:
+            while runningTime_all <= MCTS_all_maximal_time:
+            
+                '''
+                if runningTime_level > MCTS_level_maximal_time: 
+                    bestChild = mctsInstance.bestChild(mctsInstance.rootIndex)
+                    # pick the current best move to take  
+                    mctsInstance.makeOneMove(bestChild)
+                    start_time_level = time.time()
+                '''
+                
+
+                # Here are three steps for MCTS
+                (leafNode, availableActions) = mctsInstance.treeTraversal(mctsInstance.rootIndex)
+                newNodes = mctsInstance.initialiseExplorationNode(leafNode, availableActions)
+                for node in newNodes:
+                    (_, value) = mctsInstance.sampling(node, availableActions)
+                    mctsInstance.backPropagation(node, value)
+                if currentBest > mctsInstance.bestCase[0]:
+                    print("best distance up to now is %s" % (str(mctsInstance.bestCase[0])))
+                    currentBest = mctsInstance.bestCase[0]
                 bestChild = mctsInstance.bestChild(mctsInstance.rootIndex)
-                # pick the current best move to take  
-                mctsInstance.makeOneMove(bestChild)
-                start_time_level = time.time()
-            '''
-             
 
-            # Here are three steps for MCTS
-            (leafNode, availableActions) = mctsInstance.treeTraversal(mctsInstance.rootIndex)
-            newNodes = mctsInstance.initialiseExplorationNode(leafNode, availableActions)
-            for node in newNodes:
-                (_, value) = mctsInstance.sampling(node, availableActions)
-                mctsInstance.backPropagation(node, value)
-            if currentBest > mctsInstance.bestCase[0]:
-                print("best distance up to now is %s" % (str(mctsInstance.bestCase[0])))
-                currentBest = mctsInstance.bestCase[0]
-            bestChild = mctsInstance.bestChild(mctsInstance.rootIndex)
+                # # store the current best
+                # (_, bestManipulation) = mctsInstance.bestCase
+                # image1 = mctsInstance.applyManipulation(bestManipulation)
+                # path0 = "%s_pic/%s_Unsafe_currentBest.png" % (dataSetName, image_index)
+                # NN.save_input(image1, path0)
 
-            # # store the current best
-            # (_, bestManipulation) = mctsInstance.bestCase
-            # image1 = mctsInstance.applyManipulation(bestManipulation)
-            # path0 = "%s_pic/%s_Unsafe_currentBest.png" % (dataSetName, image_index)
-            # NN.save_input(image1, path0)
-
-            runningTime_all = time.time() - start_time_all
-            runningTime_level = time.time() - start_time_level
+                runningTime_all = time.time() - start_time_all
+                runningTime_level = time.time() - start_time_level
+        except KeyboardInterrupt:
+            print("\ninterrupted after running for %s seconds\n" % (time.time() - start_time_all))
+            pass    # use the current best manipulation below in the case of interrupt
 
         (_, bestManipulation) = mctsInstance.bestCase
 

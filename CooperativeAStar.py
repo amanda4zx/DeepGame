@@ -66,6 +66,7 @@ class CooperativeAStar:
         # manipulated_images = np.asarray(manipulated_images)  # [len(pixels), chl*2, row, col, chl]
         # manipulated_images = manipulated_images.reshape(len(pixels) * chl * 2, row, col, chl)
 
+        # TODO: might reach the same point by different ways and repeat the work. Avoid by keeping a set of all aggregate manipulations and making valid false if any predecessor (by one atomic manip) has been added to the set at the time of expansion. Expansion is when passed as image to target_pixel
         atomic_manipulations = []
         manipulated_images = []
         for (x, y) in pixels:
@@ -91,17 +92,17 @@ class CooperativeAStar:
         for idx in range(len(manipulated_images)):
             if not diffImage(manipulated_images[idx], self.IMAGE) or not diffImage(manipulated_images[idx], image):
                 continue
-            cost = self.cal_distance(manipulated_images[idx], self.IMAGE)
-            [p_max, p_2dn_max] = heapq.nlargest(2, probabilities[idx])
-            heuristic = (p_max - p_2dn_max) * 2 * self.TAU  # heuristic value determines Admissible (lb) or not (ub)
-            estimation = cost + heuristic
 
             valid = True
             if self.ADV_MANIPULATION:
                 for atomic in atomic_list:  # atomic: [x, y, z, +/-tau]
                     if atomic_manipulations[idx][0:3] == atomic[0:3] and atomic_manipulations[idx][3] == -atomic[3]:
-                        valid = False
+                        valid = False   # Do not undo a previous atomic manipulation
             if valid is True:
+                cost = self.cal_distance(manipulated_images[idx], self.IMAGE)
+                [p_max, p_2dn_max] = heapq.nlargest(2, probabilities[idx])
+                heuristic = (p_max - p_2dn_max) * 2 * self.TAU  # heuristic value determines Admissible (lb) or not (ub)
+                estimation = cost + heuristic
                 self.DIST_EVALUATION.update({self.ADV_MANIPULATION + atomic_manipulations[idx]: estimation})
 
             # self.DIST_EVALUATION.update({self.ADV_MANIPULATION + atomic_manipulations[idx]: estimation})
@@ -157,22 +158,22 @@ class CooperativeAStar:
             for atomic in atomic_list:
                 valid, new_image = self.apply_atomic_manipulation(new_image, atomic)
             dist = self.cal_distance(self.IMAGE, new_image)
-            # print("%s distance (actual): %s" % (self.DIST_METRIC, dist))
+            print("%s distance (actual): %s" % (self.DIST_METRIC, dist))
 
             new_label, new_confidence = self.MODEL.predict(new_image)
             if self.cal_distance(self.IMAGE, new_image) > self.DIST_VAL:
-                # print("Adversarial distance exceeds distance budget.")
+                print("Adversarial distance exceeds distance budget.")
                 self.ADVERSARY_FOUND = False
                 break
             elif new_label != self.LABEL:
-                # print("Adversarial image is found.")
+                print("Adversarial image is found.")
                 self.ADVERSARY_FOUND = True
                 self.ADVERSARY = new_image
                 break
 
             if self.CURRENT_SAFE[-1] != dist:
                 self.CURRENT_SAFE.append(dist)
-                print("%s distance (actual): %s" % (self.DIST_METRIC, dist))
+                # print("%s distance (actual): %s" % (self.DIST_METRIC, dist))
                 print("Current best manipulations:", self.ADV_MANIPULATION)
                 path = "%s_pic/idx_%s_Safe_currentBest.png" % (self.DATASET, self.IDX)
                 # path = "%s_pic/idx_%s_Safe_currentBest_%s.png" % (self.DATASET, self.IDX, len(self.CURRENT_SAFE) - 1)

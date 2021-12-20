@@ -290,7 +290,8 @@ class MCTSCooperative:
             dist = self.computeDistance(activations1)
             
             self.numAdv += 1
-            nprint("current best %s, considered to be replaced by %s" % (self.bestCase[0], dist))
+            # nprint("current best %s, considered to be replaced by %s" % (self.bestCase[0], dist))
+            nprint("current best %s, found another adversarial example at distance %s" % (self.bestCase[0], dist))
             if self.bestCase[0] > dist:
                 print("update best case from %s to %s" % (self.bestCase[0], dist))
                 self.numConverge += 1
