@@ -34,10 +34,16 @@ def lowerbound(dataset_name, image_index, game_type, eta, tau, network_type):
         dataset_name, image_index, label_str, confidence)
     NN.save_input(image, path)
 
+    is_interrupted = False
     if game_type == 'cooperative':
         tic = time.time()
         cooperative = CooperativeAStar(dataset_name, image_index, image, NN, eta, tau)
-        cooperative.play_game(image)
+        try:
+            cooperative.play_game(image)
+        except KeyboardInterrupt:
+            is_interrupted = True
+            pass
+
         if cooperative.ADVERSARY_FOUND is True:
             elapsed = time.time() - tic
             adversary = cooperative.ADVERSARY
@@ -72,7 +78,13 @@ def lowerbound(dataset_name, image_index, game_type, eta, tau, network_type):
                 dataset_name, image_index, eta[0], dist, elapsed)
             NN.save_input(np.absolute(image - adversary), path)
         else:
-            print("Adversarial distance exceeds distance budget.")
+            if is_interrupted:
+                print("\nInterrupted after %s minutes\n" % ((time.time() - tic)/60))
+            else:
+                print("Adversarial distance exceeds distance budget.")
+            path = "%s_pic/idx_%s_safe_with_%s_distance_%s.png" % (
+                dataset_name, image_index, eta[0], cooperative.CURRENT_SAFE[-1])
+            NN.save_input(cooperative.CURRENT_BEST_IMAGE, path)
 
     elif game_type == 'competitive':
         competitive = CompetitiveAlphaBeta(image, NN, eta, tau)

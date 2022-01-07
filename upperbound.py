@@ -77,7 +77,7 @@ def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type
                 runningTime_all = time.time() - start_time_all
                 runningTime_level = time.time() - start_time_level
         except KeyboardInterrupt:
-            print("\ninterrupted after running for %s seconds\n" % (time.time() - start_time_all))
+            print("\ninterrupted after running for %s minutes\n" % ((time.time() - start_time_all)/60))
             pass    # use the current best manipulation below in the case of interrupt
 
         (_, bestManipulation) = mctsInstance.bestCase

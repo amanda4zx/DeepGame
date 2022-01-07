@@ -5,6 +5,8 @@ from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 # from tensorflow.keras.utils import plot_model
 
+from DataSet import *
+
 class SelfAttentionNetwork(object):
     # Specify which dataset at initialisation.
     def __init__(self, data_set):
@@ -13,14 +15,15 @@ class SelfAttentionNetwork(object):
     
     # To train a neural network.
     def train(self):
+        k = 0.25 # dk / F_out, where F_out = number of channels output by an attention-augmented layer
+        v = 0.25 # dv / F_out
+
         # Train an mnist model.
         if self.data_set == 'mnist' :
             batch_size = 128
             num_classes = 10
             epochs = 50
             img_rows, img_cols = 28, 28
-            k = 1 # dk / F_out, where F_out = number of channels output by an attention-augmented layer
-            v = 1 # dv / F_out
 
             (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
@@ -73,6 +76,83 @@ class SelfAttentionNetwork(object):
             score = model.evaluate(x_test, y_test, verbose=0)
             print("Test loss:", score[0])
             print("Test accuracy:", score[1])
+
+            self.model = model
+
+        # Train a gtsrb model.
+        elif self.data_set == 'gtsrb':
+            batch_size = 128
+            num_classes = 43
+            epochs = 50
+            img_rows, img_cols, img_chls = 48, 48, 3
+            data_augmentation = True
+
+            train = DataSet('gtsrb', 'training')
+            x_train, y_train = train.x, train.y
+            test = DataSet('gtsrb', 'test')
+            x_test, y_test = test.x, test.y
+            input_shape = (img_rows, img_cols, img_chls)
+
+            input = keras.Input(shape=input_shape)
+            conv1 = AugmentedConv2D((int)(64 * (1 - v)), (3, 3), activation='relu', dk = (int)(64 * k), dv = (int)(64 * v))(input)
+            conv1 = BatchNormalization()(conv1)
+            # conv2 = AugmentedConv2D((int)(64 * (1 - v)), (3, 3), activation='relu', dk = (int)(64 * k), dv = (int)(64 * v))(conv1)
+            # conv2 = BatchNormalization()(conv2)
+            conv2 = Conv2D(64, (3, 3), activation='relu')(conv1)
+            pool1 = MaxPooling2D(pool_size=(2, 2))(conv2)
+            conv3 = AugmentedConv2D((int)(128 * (1 - v)), (3, 3), activation='relu', dk = (int)(128 * k), dv = (int)(128 * v))(pool1)
+            conv3 = BatchNormalization()(conv3)
+            # conv4 = AugmentedConv2D((int)(128 * (1 - v)), (3, 3), activation='relu', dk = (int)(128 * k), dv = (int)(128 * v))(conv3)
+            # conv4 = BatchNormalization()(conv4)
+            conv4 = Conv2D(128, (3, 3), activation='relu')(conv3)
+            pool2 = MaxPooling2D(pool_size=(2, 2))(conv4)
+            flat = Flatten()(pool2)
+            dense1 = Dense(256, activation='relu')(flat)
+            drop = Dropout(0.5)(dense1)
+            dense2 = Dense(256, activation='relu')(drop)
+            dense3 = Dense(num_classes, activation=None)(dense2)
+            output = Softmax()(dense3)
+
+            model = keras.Model(inputs = input, outputs = output)
+
+            model.summary()
+
+            opt = keras.optimizers.RMSprop(lr=0.0001, decay=1e-6)
+            model.compile(loss='categorical_crossentropy',
+                          optimizer=opt,
+                          metrics=['accuracy'])
+
+            if not data_augmentation:
+                print("Not using data augmentation.")
+                model.fit(x_train, y_train,
+                          batch_size=batch_size,
+                          epochs=epochs,
+                          validation_data=(x_test, y_test),
+                          shuffle=True)
+            else:
+                print("Using real-time data augmentation.")
+                datagen = ImageDataGenerator(
+                    featurewise_center=False,
+                    samplewise_center=False,
+                    featurewise_std_normalization=False,
+                    samplewise_std_normalization=False,
+                    zca_whitening=False,
+                    rotation_range=0,
+                    width_shift_range=0.1,
+                    height_shift_range=0.1,
+                    horizontal_flip=True,
+                    vertical_flip=False)
+
+                datagen.fit(x_train)
+                model.fit(datagen.flow(x_train, y_train,
+                                                 batch_size=batch_size),
+                                    epochs=epochs,
+                                    validation_data=(x_test, y_test),
+                                    workers=4)
+
+            scores = model.evaluate(x_test, y_test, verbose=0)
+            print("Test loss:", scores[0])
+            print("Test accuracy:", scores[1])
 
             self.model = model
 

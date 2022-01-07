@@ -282,7 +282,8 @@ class MCTSCooperative:
         dist = self.computeDistance(activations1)
 
         # need not only class change, but also high confidence adversary examples
-        if newClass != self.originalClass and newConfident > effectiveConfidenceWhenChanging:
+        # if newClass != self.originalClass and newConfident > effectiveConfidenceWhenChanging:
+        if newClass != self.originalClass:
             nprint("sampling a path ends in a terminal node with depth %s... " % self.depth)
 
             self.atomicManipulationPath = self.scrutinizePath(self.atomicManipulationPath)

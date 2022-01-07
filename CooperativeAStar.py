@@ -13,6 +13,7 @@ import heapq
 
 from FeatureExtraction import *
 from basics import *
+import math
 
 
 class CooperativeAStar:
@@ -31,10 +32,12 @@ class CooperativeAStar:
         self.PARTITIONS = feature_extraction.get_partitions(self.IMAGE, self.MODEL, num_partition=10)
 
         self.DIST_EVALUATION = {}
+        self.EXPANDED_MANIPS = []
         self.ADV_MANIPULATION = ()
         self.ADVERSARY_FOUND = None
         self.ADVERSARY = None
 
+        self.CURRENT_BEST_IMAGE = image
         self.CURRENT_SAFE = [0]
 
         print("Distance metric %s, with bound value %s." % (self.DIST_METRIC, self.DIST_VAL))
@@ -66,22 +69,28 @@ class CooperativeAStar:
         # manipulated_images = np.asarray(manipulated_images)  # [len(pixels), chl*2, row, col, chl]
         # manipulated_images = manipulated_images.reshape(len(pixels) * chl * 2, row, col, chl)
 
-        # TODO: might reach the same point by different ways and repeat the work. Avoid by keeping a set of all aggregate manipulations and making valid false if any predecessor (by one atomic manip) has been added to the set at the time of expansion. Expansion is when passed as image to target_pixel
         atomic_manipulations = []
         manipulated_images = []
         for (x, y) in pixels:
             for z in range(chl):
                 atomic = (x, y, z, 1 * self.TAU)
-                valid, atomic_image = self.apply_atomic_manipulation(image, atomic)
-                if valid is True:
-                    manipulated_images.append(atomic_image)
-                    atomic_manipulations.append(atomic)
+                if not self.pred_expanded(atomic):
+                    valid, atomic_image = self.apply_atomic_manipulation(image, atomic)
+                    if valid is True:
+                        manipulated_images.append(atomic_image)
+                        atomic_manipulations.append(atomic)
                 atomic = (x, y, z, -1 * self.TAU)
-                valid, atomic_image = self.apply_atomic_manipulation(image, atomic)
-                if valid is True:
-                    manipulated_images.append(atomic_image)
-                    atomic_manipulations.append(atomic)
+                if not self.pred_expanded(atomic):
+                    valid, atomic_image = self.apply_atomic_manipulation(image, atomic)
+                    if valid is True:
+                        manipulated_images.append(atomic_image)
+                        atomic_manipulations.append(atomic)
         manipulated_images = np.asarray(manipulated_images)
+
+        self.EXPANDED_MANIPS.append(self.get_atomic_manip_dict(self.ADV_MANIPULATION))
+
+        if manipulated_images.size == 0:
+            return
 
         probabilities = self.MODEL.model.predict(manipulated_images)
         # softmax_logits = self.MODEL.softmax_logits(manipulated_images)
@@ -107,6 +116,60 @@ class CooperativeAStar:
 
             # self.DIST_EVALUATION.update({self.ADV_MANIPULATION + atomic_manipulations[idx]: estimation})
         # print("Atomic manipulations of target pixels done.")
+
+    # check whether the manipulation has a predecessor that has been expanded
+    def pred_expanded(self, atomic):
+        atomic_manip_dict = self.get_atomic_manip_dict(self.ADV_MANIPULATION + atomic)
+
+        # Check whether any of its predecessors has been expanded
+        expanded = False
+        dict_copy = atomic_manip_dict.copy() # Need a copy as we manipulate keys below
+        for chl in dict_copy:
+            # Store the original manipulation on chl, and tweak temporarily to a predecessor
+            m = atomic_manip_dict[chl]
+            if m == 1 or m == -1:
+                del atomic_manip_dict[chl]
+            else:
+                if m > 1:
+                    atomic_manip_dict[chl] -= 1
+                else: # m < -1
+                    atomic_manip_dict[chl] += 1
+            if atomic_manip_dict in self.EXPANDED_MANIPS:
+                expanded = True
+                break
+            # Restore the manipulation
+            atomic_manip_dict[chl] = m
+
+        # if expanded:
+        #     print("eliminated a discovered node %s\n" % atomic_manip_dict)
+        # else:
+        #     print("newly discoverd node %s\n" % atomic_manip_dict)
+
+        return expanded
+
+    # Extract the manipulations in terms of the number of taus for adv_manips,
+    # assuming it has the same format as self.ADV_MANIPULATION
+    def get_atomic_manip_dict(self, adv_manips):
+        atomic_list = []
+        if adv_manips:
+            atomic_list = [adv_manips[i:i + 4] for i in range(0, len(adv_manips), 4)]
+
+        atomic_manip_dict = {}
+        for (x,y,c,m) in atomic_list:
+            num_tau = 1
+            if m < 0:
+                num_tau = -1
+            if (x,y,c) in atomic_manip_dict:
+                atomic_manip_dict[(x,y,c)] += num_tau
+            else:
+                atomic_manip_dict[(x,y,c)] = num_tau
+
+        dict_copy = atomic_manip_dict.copy() # Need a copy as we manipulate keys below
+        for chl in dict_copy:
+            if atomic_manip_dict[chl] == 0:
+                del atomic_manip_dict[chl]  # Ensure there is no 0 manipulation
+
+        return atomic_manip_dict
 
     def apply_atomic_manipulation(self, image, atomic):
         atomic_image = image.copy()
@@ -171,8 +234,10 @@ class CooperativeAStar:
                 self.ADVERSARY = new_image
                 break
 
-            if self.CURRENT_SAFE[-1] != dist:
+            # if self.CURRENT_SAFE[-1] != dist:
+            if self.CURRENT_SAFE[-1] < dist:
                 self.CURRENT_SAFE.append(dist)
+                self.CURRENT_BEST_IMAGE = new_image
                 # print("%s distance (actual): %s" % (self.DIST_METRIC, dist))
                 print("Current best manipulations:", self.ADV_MANIPULATION)
                 path = "%s_pic/idx_%s_Safe_currentBest.png" % (self.DATASET, self.IDX)

@@ -57,7 +57,7 @@ class DataSet:
             num_classes = 43
             img_rows, img_cols, img_chls = 48, 48, 3
             if trainOrTest == "training":
-                directory = 'models/GTSRB/Final_Training/'
+                directory = 'GTSRB/Final_Training/'
                 try:
                     with h5py.File(directory + 'gtsrb_training.h5') as hf:
                         x_train, y_train = hf['imgs'][:], hf['labels'][:]
@@ -91,7 +91,7 @@ class DataSet:
                     y = keras.utils.to_categorical(y_train, num_classes)
 
             else:
-                directory = 'models/GTSRB/Final_Test/'
+                directory = 'GTSRB/Final_Test/'
                 try:
                     with h5py.File(directory + 'gtsrb_test.h5') as hf:
                         x_test, y_test = hf['imgs'][:], hf['labels'][:]
