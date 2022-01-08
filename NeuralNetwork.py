@@ -150,9 +150,10 @@ class NeuralNetwork:
                 softmax_logits.append(logits)
             softmax_logits = np.asarray(softmax_logits)
             softmax_logits = softmax_logits.reshape(batch * batch_size, model.output_shape[1])
-            # note that here if logits is empty, it is fine, as it won't be concatenated.
-            logits = partial_model.predict(manipulated_images[batch * batch_size:len(manipulated_images)])
-            softmax_logits = np.concatenate((softmax_logits, logits), axis=0)
+
+            if remainder > 0:
+                logits = partial_model.predict(manipulated_images[batch * batch_size:len(manipulated_images)])
+                softmax_logits = np.concatenate((softmax_logits, logits), axis=0)
         else:
             # softmax_logits = func([manipulated_images, 0])[0]
             softmax_logits = partial_model.predict(manipulated_images)
@@ -161,5 +162,5 @@ class NeuralNetwork:
         # print(softmax_logits.shape)
         return softmax_logits
 
-nn = NeuralNetwork('gtsrb', 'self_attn')
-nn.train_network()
+# nn = NeuralNetwork('gtsrb', 'self_attn')
+# nn.train_network()
