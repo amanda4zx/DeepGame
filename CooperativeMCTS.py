@@ -79,6 +79,11 @@ class MCTSCooperative:
         self.availableActionIDs = []
         self.usedActionIDs = []
 
+        # number of iterations i.e. calls to sampling
+        self.NITERS = 0
+        # pairs of (number of iterations, best bound)
+        self.PROGRESS = [(0, eta[1])]
+
     def initialiseMoves(self):
         # initialise actions according to the type of manipulations
         actions = self.moves.moves
@@ -228,6 +233,7 @@ class MCTSCooperative:
     # start random sampling and return the Euclidean value as the value
     def sampling(self, index, availableActions):
         nprint("start sampling node %s" % index)
+        self.NITERS += 1
         availableActions2 = copy.deepcopy(availableActions)
         sampleValues = []
         i = 0
@@ -299,6 +305,7 @@ class MCTSCooperative:
                 self.bestCase = (dist, self.atomicManipulationPath)
                 path0 = "%s_pic/%s_Unsafe_currentBest_%s.png" % (self.data_set, self.image_index, self.numConverge)
                 self.model.save_input(activations1, path0)
+                self.PROGRESS.append((self.NITERS, dist))
             return (self.depth == 0, dist)
 
         elif dist > distVal:   ##########################

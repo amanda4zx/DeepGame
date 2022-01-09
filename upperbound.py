@@ -3,6 +3,7 @@ from NeuralNetwork import *
 from DataSet import *
 from CompetitiveMCTS import *
 from CooperativeMCTS import *
+from DataCollection import *
 # import numpy as np
 
 
@@ -31,6 +32,8 @@ def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type
     #     print("The classification does not match the ground truth.")
     #     return
     print("the second player is %s." % gameType)
+
+    dc = DataCollection("%s_ub_%s_%s_%s_%s_%s_%s" % (dataSetName, gameType, image_index, eta[0], eta[1], tau, network_type))
 
     # tau = 1
 
@@ -77,13 +80,17 @@ def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type
                 runningTime_all = time.time() - start_time_all
                 runningTime_level = time.time() - start_time_level
         except KeyboardInterrupt:
-            print("\ninterrupted after running for %s minutes\n" % ((time.time() - start_time_all)/60))
+            elapsed = time.time() - start_time_all
+            print("\nInterrupted after running for %s minutes\n" % (elapsed/60))
+            dc.addComment("Interrupted after running for %s minutes\n" % (elapsed/60))
             pass    # use the current best manipulation below in the case of interrupt
 
         (_, bestManipulation) = mctsInstance.bestCase
 
         print("the number of sampling: %s" % mctsInstance.numOfSampling)
         print("the number of adversarial examples: %s\n" % mctsInstance.numAdv)
+        dc.addComment("Number of sampling: %s\n" % mctsInstance.numOfSampling)
+        dc.addComment("Number of adversarial examples: %s\n" % mctsInstance.numAdv)
 
         image1 = mctsInstance.applyManipulation(bestManipulation)
         (newClass, newConfident) = NN.predict(image1)
@@ -98,8 +105,7 @@ def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type
             print("\nfound an adversary image within pre-specified bounded computational resource. "
                   "The following is its information: ")
             print("difference between images: %s" % (diffImage(image, image1)))
-
-            print("number of adversarial examples found: %s" % mctsInstance.numAdv)
+            # print("number of adversarial examples found: %s" % mctsInstance.numAdv)
 
             l2dist = l2Distance(mctsInstance.image, image1)
             l1dist = l1Distance(mctsInstance.image, image1)
@@ -111,10 +117,21 @@ def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type
             print("manipulated percentage distance %s" % percent)
             print("class is changed into '%s' with confidence %s\n" % (newClassStr, newConfident))
 
+            dc.addRunningTime(time.time() - start_time_all)
+            dc.addComment("Found an adversarial example\n")
+            dc.addComment("Class is changed into '%s' with confidence %s\n" % (newClassStr, newConfident))
+            dc.addComment("Difference between images: %s\n" % (diffImage(image, image1)))
+            dc.addl2Distance(l2dist)
+            dc.addl1Distance(l1dist)
+            dc.addl0Distance(l0dist)
+            dc.addManipulationPercentage(percent)
+            dc.addComment("Progress: %s\n" % mctsInstance.PROGRESS)
+
             return time.time() - start_time_all, newConfident, percent, l2dist, l1dist, l0dist, 0
 
         else:
             print("\nfailed to find an adversary image within pre-specified bounded computational resource. ")
+            dc.addComment("Failed to find an adversary image within pre-specified bounded computational resource.\n")
             return 0, 0, 0, 0, 0, 0, 0
 
     elif gameType == 'competitive':

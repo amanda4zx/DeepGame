@@ -39,6 +39,8 @@ class CooperativeAStar:
 
         self.CURRENT_BEST_IMAGE = image
         self.CURRENT_SAFE = [0]
+        self.NITERS = 0
+        self.PROGRESS = [(0, 0)]  # pairs of (number of iterations, best bound)
 
         print("Distance metric %s, with bound value %s." % (self.DIST_METRIC, self.DIST_VAL))
 
@@ -216,6 +218,8 @@ class CooperativeAStar:
             # print("%s distance (estimated): %s" % (self.DIST_METRIC, self.DIST_EVALUATION[self.ADV_MANIPULATION]))
             self.DIST_EVALUATION.pop(self.ADV_MANIPULATION)
 
+            self.NITERS += 1
+
             new_image = copy.deepcopy(self.IMAGE)
             atomic_list = [self.ADV_MANIPULATION[i:i + 4] for i in range(0, len(self.ADV_MANIPULATION), 4)]
             for atomic in atomic_list:
@@ -238,10 +242,11 @@ class CooperativeAStar:
             if self.CURRENT_SAFE[-1] < dist:
                 self.CURRENT_SAFE.append(dist)
                 self.CURRENT_BEST_IMAGE = new_image
+                self.PROGRESS.append((self.NITERS, dist))
                 # print("%s distance (actual): %s" % (self.DIST_METRIC, dist))
                 print("Current best manipulations:", self.ADV_MANIPULATION)
-                path = "%s_pic/idx_%s_Safe_currentBest.png" % (self.DATASET, self.IDX)
-                # path = "%s_pic/idx_%s_Safe_currentBest_%s.png" % (self.DATASET, self.IDX, len(self.CURRENT_SAFE) - 1)
+                # path = "%s_pic/idx_%s_Safe_currentBest.png" % (self.DATASET, self.IDX)
+                path = "%s_pic/idx_%s_Safe_currentBest_%s.png" % (self.DATASET, self.IDX, len(self.CURRENT_SAFE) - 1)
                 self.MODEL.save_input(new_image, path)
 
 

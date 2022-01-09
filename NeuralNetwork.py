@@ -93,7 +93,8 @@ class NeuralNetwork:
             print("load_network: Unsupported dataset.")
 
     def save_input(self, image, filename):
-        image = Image.array_to_img(image.copy())
+        if(self.data_set == 'mnist'):
+            image = Image.array_to_img(image.copy())
         plt.imsave(self.dir + filename, image, cmap='gray')
         # causes discrepancy
         # image_cv = copy.deepcopy(image)

@@ -14,6 +14,7 @@ from CooperativeAStar import *
 from CompetitiveAlphaBeta import *
 from NeuralNetwork import *
 from DataSet import *
+from DataCollection import *
 
 
 def lowerbound(dataset_name, image_index, game_type, eta, tau, network_type):
@@ -34,6 +35,8 @@ def lowerbound(dataset_name, image_index, game_type, eta, tau, network_type):
         dataset_name, image_index, label_str, confidence)
     NN.save_input(image, path)
 
+    dc = DataCollection("%s_lb_%s_%s_%s_%s_%s_%s" % (dataset_name, game_type, image_index, eta[0], eta[1], tau, network_type))
+
     is_interrupted = False
     if game_type == 'cooperative':
         tic = time.time()
@@ -44,8 +47,8 @@ def lowerbound(dataset_name, image_index, game_type, eta, tau, network_type):
             is_interrupted = True
             pass
 
+        elapsed = time.time() - tic
         if cooperative.ADVERSARY_FOUND is True:
-            elapsed = time.time() - tic
             adversary = cooperative.ADVERSARY
             adv_label, adv_confidence = NN.predict(adversary)
             adv_label_str = NN.get_label(int(adv_label))
@@ -63,6 +66,10 @@ def lowerbound(dataset_name, image_index, game_type, eta, tau, network_type):
             print("manipulated percentage distance %s" % percent)
             print("class is changed into '%s' with confidence %s\n" % (adv_label_str, adv_confidence))
 
+            dc.addComment("Found an adversarial example\n")
+            dc.addComment("Class is changed into '%s' with confidence %s\n" % (adv_label_str, adv_confidence))
+            dc.addComment("Difference between images: %s\n" % (diffImage(image, adversary)))
+
             path = "%s_pic/idx_%s_modified_into_[%s]_with_confidence_%s.png" % (
                 dataset_name, image_index, adv_label_str, adv_confidence)
             NN.save_input(adversary, path)
@@ -79,12 +86,30 @@ def lowerbound(dataset_name, image_index, game_type, eta, tau, network_type):
             NN.save_input(np.absolute(image - adversary), path)
         else:
             if is_interrupted:
-                print("\nInterrupted after %s minutes\n" % ((time.time() - tic)/60))
+                print("\nInterrupted after %s minutes\n" % (elapsed/60))
+                dc.addComment("Interrupted after %s minutes\n" % (elapsed/60))
             else:
                 print("Adversarial distance exceeds distance budget.")
+                dc.addComment("Adversarial distance exceeds distance budget.\n")
+
+            newimage = cooperative.CURRENT_BEST_IMAGE
+            new_label, new_confidence = NN.predict(newimage)
+            l2dist = l2Distance(image, newimage)
+            l1dist = l1Distance(image, newimage)
+            l0dist = l0Distance(image, newimage)
+            percent = diffPercent(image, newimage)
+            dc.addComment("Current best safe manipulation has confidence %s\n" % new_confidence)
+
             path = "%s_pic/idx_%s_safe_with_%s_distance_%s.png" % (
                 dataset_name, image_index, eta[0], cooperative.CURRENT_SAFE[-1])
-            NN.save_input(cooperative.CURRENT_BEST_IMAGE, path)
+            NN.save_input(newimage, path)
+
+        dc.addRunningTime(elapsed)
+        dc.addl2Distance(l2dist)
+        dc.addl1Distance(l1dist)
+        dc.addl0Distance(l0dist)
+        dc.addManipulationPercentage(percent)
+        dc.addComment("Progress: %s\n" % cooperative.PROGRESS)
 
     elif game_type == 'competitive':
         competitive = CompetitiveAlphaBeta(image, NN, eta, tau)
