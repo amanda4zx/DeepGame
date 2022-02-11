@@ -66,6 +66,7 @@ or
 
 # Remark
 This tool is under active development and maintenance, please feel free to contact us about any problem encountered.
+To downscale images for gtsrb and train the corresponding networks, need to modify parameters in both DataSet.py and the files for the specific types of networks.
 
 Best wishes,
 

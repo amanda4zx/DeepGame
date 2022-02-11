@@ -244,7 +244,8 @@ class CooperativeAStar:
                 self.CURRENT_BEST_IMAGE = new_image
                 self.PROGRESS.append((self.NITERS, dist))
                 # print("%s distance (actual): %s" % (self.DIST_METRIC, dist))
-                print("Current best manipulations:", self.ADV_MANIPULATION)
+                print("Current best manipulations: ", self.ADV_MANIPULATION)
+                print("Number of iterations: ", self.NITERS)
                 # path = "%s_pic/idx_%s_Safe_currentBest.png" % (self.DATASET, self.IDX)
                 path = "%s_pic/idx_%s_Safe_currentBest_%s.png" % (self.DATASET, self.IDX, len(self.CURRENT_SAFE) - 1)
                 self.MODEL.save_input(new_image, path)

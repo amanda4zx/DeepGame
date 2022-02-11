@@ -301,6 +301,7 @@ class MCTSCooperative:
             nprint("current best %s, found another adversarial example at distance %s" % (self.bestCase[0], dist))
             if self.bestCase[0] > dist:
                 print("update best case from %s to %s" % (self.bestCase[0], dist))
+                print("number of iterations is %s" % self.NITERS)
                 self.numConverge += 1
                 self.bestCase = (dist, self.atomicManipulationPath)
                 path0 = "%s_pic/%s_Unsafe_currentBest_%s.png" % (self.data_set, self.image_index, self.numConverge)

@@ -81,10 +81,14 @@ class SelfAttentionNetwork(object):
 
         # Train a gtsrb model.
         elif self.data_set == 'gtsrb':
+            downscale = True
             batch_size = 128
             num_classes = 43
             epochs = 50
-            img_rows, img_cols, img_chls = 48, 48, 3
+            if downscale:
+                img_rows, img_cols, img_chls = 24, 24, 3
+            else:
+                img_rows, img_cols, img_chls = 48, 48, 3
             data_augmentation = True
 
             train = DataSet('gtsrb', 'training')

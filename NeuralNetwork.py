@@ -163,5 +163,5 @@ class NeuralNetwork:
         # print(softmax_logits.shape)
         return softmax_logits
 
-# nn = NeuralNetwork('gtsrb', 'self_attn')
+# nn = NeuralNetwork('gtsrb', 'seq')
 # nn.train_network()

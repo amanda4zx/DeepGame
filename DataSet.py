@@ -13,6 +13,8 @@ import pandas as pd
 import numpy as np
 import h5py
 import os
+import cv2
+from matplotlib import pyplot as plt
 import glob
 
 
@@ -120,8 +122,17 @@ class DataSet:
             print("Unsupported dataset %s. Try 'mnist' or 'cifar10'." % data_set)
             exit()
 
-        self.x = x
-        self.y = y
+        downscale = True
+        dims = (24,24)
+        if downscale: # downscale to dims
+            # plt.imsave("x33.jpg", x[33], cmap='gray')
+            self.x = np.array(list(cv2.resize(img, dims) for img in x))
+            # plt.imsave("x332.jpg", self.x[33], cmap='gray')
+            self.y = y
+            # targetDims = (x.shape[0], 24, 24, 3)
+        else:
+            self.x = x
+            self.y = y
 
     # get dataset 
     def get_dataset(self):

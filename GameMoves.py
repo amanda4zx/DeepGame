@@ -34,10 +34,11 @@ class GameMoves:
         self.image = image
         self.tau = tau
         self.image_index = image_index
+        self.num_partition = 10
 
         feature_extraction = FeatureExtraction(pattern='grey-box')
-        kps = feature_extraction.get_key_points(self.image, num_partition=10)
-        partitions = feature_extraction.get_partitions(self.image, self.model, num_partition=10)
+        kps = feature_extraction.get_key_points(self.image, num_partition=self.num_partition)
+        partitions = feature_extraction.get_partitions(self.image, self.model, num_partition=self.num_partition)
 
         # path = "%s_pic/%s_Saliency_(%s).png" % (self.data_set, self.image_index, feature_extraction.PATTERN)
         # feature_extraction.plot_saliency_map(self.image, partitions=partitions, path=path)
