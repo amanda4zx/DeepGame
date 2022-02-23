@@ -83,6 +83,8 @@ class MCTSCooperative:
         self.NITERS = 0
         # pairs of (number of iterations, best bound)
         self.PROGRESS = [(0, eta[1])]
+        # number of nodes removed due to no child node being useful
+        self.numOfRemoval = 0
 
     def initialiseMoves(self):
         # initialise actions according to the type of manipulations
@@ -193,7 +195,7 @@ class MCTSCooperative:
         (newClass0, newConfident0) = self.model.predict(activations0)
         activations1 = self.moves.applyManipulation(self.image, newAtomicManipulation)
         (newClass1, newConfident1) = self.model.predict(activations1)
-        if abs(newConfident0 - newConfident1) < 10 ** -6:
+        if newClass0 == newClass1 and abs(newConfident0 - newConfident1) < 10 ** -6:
             return False
         else:
             return True
@@ -201,13 +203,21 @@ class MCTSCooperative:
     def initialiseExplorationNode(self, index, availableActions):
         nprint("expanding %s" % index)
         if self.keypoint[index] != 0:
+            numOfChildren = 0
             for (actionId, am) in availableActions[self.keypoint[index]].items():
                 if self.usefulAction(self.manipulation[index], am) == True:
+                    numOfChildren += 1
                     self.indexToNow += 1
                     self.keypoint[self.indexToNow] = 0
                     self.indexToActionID[self.indexToNow] = actionId
                     self.initialiseLeafNode(self.indexToNow, index, am)
                     self.children[index].append(self.indexToNow)
+            if numOfChildren == 0:
+                nprint("removing %s" % index)
+                self.numOfRemoval += 1
+                parent = self.parent[index]
+                self.children[parent].remove(index)
+
         else:
             for kp in list(set(self.keypoints.keys()) - set([0])):
                 self.indexToNow += 1

@@ -10,7 +10,7 @@ from DataCollection import *
 def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type):
     start_time = time.time()
 
-    MCTS_all_maximal_time = 10800
+    MCTS_all_maximal_time = 14400
     MCTS_level_maximal_time = 60
 
     NN = NeuralNetwork(dataSetName, network_type)
@@ -61,8 +61,10 @@ def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type
                 
 
                 # Here are three steps for MCTS
-                (leafNode, availableActions) = mctsInstance.treeTraversal(mctsInstance.rootIndex)
-                newNodes = mctsInstance.initialiseExplorationNode(leafNode, availableActions)
+                newNodes = []
+                while len(newNodes) == 0:
+                    (leafNode, availableActions) = mctsInstance.treeTraversal(mctsInstance.rootIndex)
+                    newNodes = mctsInstance.initialiseExplorationNode(leafNode, availableActions)
                 for node in newNodes:
                     (_, value) = mctsInstance.sampling(node, availableActions)
                     mctsInstance.backPropagation(node, value)
@@ -125,6 +127,7 @@ def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type
             dc.addl1Distance(l1dist)
             dc.addl0Distance(l0dist)
             dc.addManipulationPercentage(percent)
+            dc.addComment("Number of removals due to no useful child: %s\n" % mctsInstance.numOfRemoval)
             dc.addComment("Progress: %s\n" % mctsInstance.PROGRESS)
 
             return time.time() - start_time_all, newConfident, percent, l2dist, l1dist, l0dist, 0

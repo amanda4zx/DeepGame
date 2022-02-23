@@ -39,6 +39,8 @@ class GameMoves:
         feature_extraction = FeatureExtraction(pattern='grey-box')
         kps = feature_extraction.get_key_points(self.image, num_partition=self.num_partition)
         partitions = feature_extraction.get_partitions(self.image, self.model, num_partition=self.num_partition)
+        # for k in range(self.num_partition):
+        #     print(len(partitions[k]))
 
         # path = "%s_pic/%s_Saliency_(%s).png" % (self.data_set, self.image_index, feature_extraction.PATTERN)
         # feature_extraction.plot_saliency_map(self.image, partitions=partitions, path=path)
@@ -105,6 +107,7 @@ class GameMoves:
 
             # actions[k] = all_atomic_manipulations
             actions[s] = all_atomic_manipulations
+            # print(len(actions[s]))
             kp2.append(kps[s - 1])
 
             s += 1
