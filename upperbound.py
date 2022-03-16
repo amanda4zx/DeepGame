@@ -81,16 +81,26 @@ def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type
 
                 runningTime_all = time.time() - start_time_all
                 runningTime_level = time.time() - start_time_level
+                
         except KeyboardInterrupt:
             elapsed = time.time() - start_time_all
             print("\nInterrupted after running for %s minutes\n" % (elapsed/60))
             dc.addComment("Interrupted after running for %s minutes\n" % (elapsed/60))
             pass    # use the current best manipulation below in the case of interrupt
 
+        except ValueError: # no useful action (see usefulAction in CooperativeMCTS.py)
+            elapsed = time.time() - start_time_all
+            print("\nNo useful action after running for %s minutes\n" % (elapsed/60))
+            dc.addComment("No useful action after running for %s minutes\n" % (elapsed/60))
+            pass
+
+
         (_, bestManipulation) = mctsInstance.bestCase
 
+        print("the number of iterations: %s" % mctsInstance.NITERS)
         print("the number of sampling: %s" % mctsInstance.numOfSampling)
         print("the number of adversarial examples: %s\n" % mctsInstance.numAdv)
+        dc.addComment("Number of iterations: %s\n" % mctsInstance.NITERS)
         dc.addComment("Number of sampling: %s\n" % mctsInstance.numOfSampling)
         dc.addComment("Number of adversarial examples: %s\n" % mctsInstance.numAdv)
 
