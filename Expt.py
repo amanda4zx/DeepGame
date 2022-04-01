@@ -1,6 +1,9 @@
+# Code for random sampling of input indices
+
 import matplotlib.pyplot as plt
 import numpy as np
 import random
+import os
 from DataSet import *
 from NeuralNetwork import *
 from DataCollection import *
@@ -9,13 +12,7 @@ class Expt:
     def __init__(self):
         self.getIndicesForMnist()
         self.getIndicesForGTSRB()
-
-    def plotProgress(self, ls):
-        # ls is a list of pairs (#iterations, best bound)
-        xs = [x[0] for x in ls]
-        ys = [x[1] for x in ls]
-        plt.plot(xs,ys)
-        plt.show()
+        return
 
     # Randomly sample nsamples indices of each class such that all types of networks classified them correctly
     # and store the sampled indices in a file
@@ -97,4 +94,4 @@ class Expt:
             dc.addComment('%s\n\n' % allIndices[gt])
         return
 
-ex = Expt()
+# ex = Expt()

@@ -195,5 +195,7 @@ class FeatureExtraction:
             pixels = partitions[partitionID]
             for pixel in pixels:
                 heatmap[pixel] = partitionID + 1
-        plt.imsave(path, heatmap)
-
+        plt.imshow(heatmap, cmap = 'viridis')
+        plt.colorbar()
+        # plt.imsave(path, heatmap)
+        # plt.savefig(path)

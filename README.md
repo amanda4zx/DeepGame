@@ -47,17 +47,23 @@ Despite the improved accuracy of deep neural networks, the discovery of adversar
 
 # Developer's Platform
 ```
-python 3.5.5
-keras 2.1.3
-tensorflow-gpu 1.4.0
-numpy 1.14.3
-matplotlib 2.2.2
-scipy 1.1.0
+python 3.9.7
+tensorflow-gpu 2.4.1
+numpy 1.21.2
+matplotlib 3.4.3
+scipy 1.7.1
+pandas 1.3.4
+opencv 4.5.1
 ```
 
 # Run
 ```
-python main.py mnist ub cooperative 67 L2 10 1 self_attn
+python main.py gtsrb ub cooperative 67 L2 10 1 self_attn
+```
+
+or, to run experiments for multiple input indices for all three models concurrently,
+```
+python main.py gtsrb ub cooperative multi L2 10 1 multi 67 68 69
 ```
 or
 ```

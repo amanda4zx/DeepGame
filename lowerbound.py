@@ -15,15 +15,20 @@ from CompetitiveAlphaBeta import *
 from NeuralNetwork import *
 from DataSet import *
 from DataCollection import *
+from multiprocessing import Lock
 
 
-def lowerbound(dataset_name, image_index, game_type, eta, tau, network_type):
+def lowerbound(dataset_name, tau, game_type,image_index, eta, network_type, lock):
     NN = NeuralNetwork(dataset_name, network_type)
+    lock.acquire()
     NN.load_network()
+    lock.release()
     print("Dataset is %s." % NN.data_set)
     NN.model.summary()
 
+    lock.acquire()
     dataset = DataSet(dataset_name, 'testing')
+    lock.release()
     image = dataset.get_input(image_index)
     (label, confidence) = NN.predict(image)
     label_str = NN.get_label(int(label))
@@ -104,6 +109,8 @@ def lowerbound(dataset_name, image_index, game_type, eta, tau, network_type):
                 dataset_name, image_index, eta[0], cooperative.CURRENT_SAFE[-1])
             NN.save_input(newimage, path)
 
+        print("\nNumber of iterations: %s\n" % cooperative.NITERS)
+        dc.addComment("Number of iterations: %s\n" % cooperative.NITERS)
         dc.addRunningTime(elapsed)
         dc.addl2Distance(l2dist)
         dc.addl1Distance(l1dist)

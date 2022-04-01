@@ -2,6 +2,8 @@ from __future__ import print_function
 from tensorflow.keras import backend as K
 import sys
 import os
+from multiprocessing import Process, Lock
+import tensorflow as tf
 
 from NeuralNetwork import *
 from DataSet import *
@@ -10,9 +12,25 @@ from upperbound import upperbound
 from lowerbound import lowerbound
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    try:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+
+    except RuntimeError as e:
+        print(e)
+
+lock = Lock()
+
+def makeArgs(dataSetName, tau, gameType, indices, eta):
+    return [(dataSetName, tau, gameType, index, eta, network_type, lock)
+        for index in indices
+        for network_type in ['seq', 'self_attn', 'cbam_spatial_attn']]
 
 # the first way of defining parameters
-if len(sys.argv) == 9:
+numArgs = len(sys.argv)
+if numArgs >= 9:
 
     if sys.argv[1] == 'mnist' or sys.argv[1] == 'cifar10' or sys.argv[1] == 'gtsrb':
         dataSetName = sys.argv[1]
@@ -32,10 +50,10 @@ if len(sys.argv) == 9:
         print("please specify as the 3nd argument the game mode: cooperative or competitive")
         exit
 
-    if isinstance(int(sys.argv[4]), int):
+    if sys.argv[4].isnumeric():
         image_index = int(sys.argv[4])
-    else:
-        print("please specify as the 4th argument the index of the image: [int]")
+    elif sys.argv[4] != 'multi' and numArgs > 9:
+        print("please specify as the 4th argument the index of the image: [int], or 'multi' in the case of multiple inputs")
         exit
 
     if sys.argv[5] == 'L0' or sys.argv[5] == 'L1' or sys.argv[5] == 'L2':
@@ -59,9 +77,17 @@ if len(sys.argv) == 9:
     
     if sys.argv[8] == 'seq' or sys.argv[8] == 'self_attn' or sys.argv[8] == 'cbam_spatial_attn':
         network_type = sys.argv[8]
-    else:
-        print("please specify as the 8th argument the type of neural network: seq for Sequential, self_attn for dot-product self attention, cbam_spatial_attn for spatial attention in CBAM")
+    elif sys.argv[8] != 'multi' or numArgs == 9:
+        print("please specify as the 8th argument the type of neural network: seq for Sequential, self_attn for dot-product self attention, cbam_spatial_attn for spatial attention in CBAM, or multi in the case of multiprocessing")
         exit
+
+    if numArgs > 9:
+        indices = []
+        for i in range(9,numArgs):
+            if sys.argv[i].isnumeric():
+                indices.append(int(sys.argv[i]))
+            else:
+                print("please specify input image indices as the arguments after the 8th argument")
 
 elif len(sys.argv) == 1:
     # the second way of defining parameters
@@ -76,26 +102,39 @@ elif len(sys.argv) == 1:
 # calling algorithms
 # dc = DataCollection("%s_%s_%s_%s_%s_%s_%s" % (dataSetName, bound, tau, gameType, image_index, eta[0], eta[1]))
 # dc.initialiseIndex(image_index)
+try:
+    if bound == 'ub':
+        if numArgs > 9:
+            allArgs = makeArgs(dataSetName, tau, gameType, indices, eta)
+            print(allArgs)
+            ps = [Process(target=upperbound, args=a) for a in allArgs]
+            for p in ps:
+                p.start()
+            for p in ps:
+                p.join()
+        else:
+            p = Process(target=upperbound, args=(dataSetName, tau, gameType, image_index, eta, network_type, lock))
+            p.start()
+            p.join()
+    elif bound == 'lb':
+        if numArgs > 9:
+            allArgs = makeArgs(dataSetName, tau, gameType, indices, eta)
+            print(allArgs)
+            ps = [Process(target=lowerbound, args=a) for a in allArgs]
+            for p in ps:
+                p.start()
+            for p in ps:
+                p.join()
+        else:
+            p = Process(target=lowerbound, args=(dataSetName, tau, gameType, image_index, eta, network_type, lock))
+            p.start()
+    else:
+        print("Unrecognised bound setting.\n"
+            "Try 'ub' for upper bound or 'lb' for lower bound.\n")
+        exit
+except KeyboardInterrupt:
+    pass
 
-if bound == 'ub':
-    (elapsedTime, newConfident, percent, l2dist, l1dist, l0dist, maxFeatures) = upperbound(dataSetName, bound, tau,
-                                                                                           gameType, image_index, eta, network_type)
-
-    # dc.addRunningTime(elapsedTime)
-    # dc.addConfidence(newConfident)
-    # dc.addManipulationPercentage(percent)
-    # dc.addl2Distance(l2dist)
-    # dc.addl1Distance(l1dist)
-    # dc.addl0Distance(l0dist)
-    # dc.addMaxFeatures(maxFeatures)
-
-elif bound == 'lb':
-    lowerbound(dataSetName, image_index, gameType, eta, tau, network_type)
-
-else:
-    print("Unrecognised bound setting.\n"
-          "Try 'ub' for upper bound or 'lb' for lower bound.\n")
-    exit
 
 # dc.provideDetails()
 # dc.summarise()

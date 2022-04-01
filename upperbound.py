@@ -4,21 +4,26 @@ from DataSet import *
 from CompetitiveMCTS import *
 from CooperativeMCTS import *
 from DataCollection import *
+from multiprocessing import Lock
 # import numpy as np
 
 
-def upperbound(dataSetName, bound, tau, gameType, image_index, eta, network_type):
+def upperbound(dataSetName, tau, gameType, image_index, eta, network_type, lock):
     start_time = time.time()
 
     MCTS_all_maximal_time = 14400
     MCTS_level_maximal_time = 60
 
     NN = NeuralNetwork(dataSetName, network_type)
+    lock.acquire()
     NN.load_network()
+    lock.release()
     print("Dataset is %s." % NN.data_set)
     NN.model.summary()
 
+    lock.acquire()
     dataset = DataSet(dataSetName, 'testing')
+    lock.release()
     image = dataset.get_input(image_index)
     (label, confident) = NN.predict(image)
     origClassStr = NN.get_label(int(label))
