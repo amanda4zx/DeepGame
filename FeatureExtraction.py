@@ -15,6 +15,8 @@ from scipy.stats import norm
 # from tensorflow.keras import backend as K
 from matplotlib import pyplot as plt
 
+from basics import *
+
 
 # Define a Feature Extraction class.
 class FeatureExtraction:
@@ -63,7 +65,7 @@ class FeatureExtraction:
             key_points = [key for key in range(self.NUM_PARTITION)]
 
         else:
-            print("Unrecognised feature extraction pattern. "
+            nprint("Unrecognised feature extraction pattern. "
                   "Try 'black-box' or 'grey-box'.")
 
         return key_points
@@ -75,12 +77,12 @@ class FeatureExtraction:
 
         # Grey-box pattern: must specify a neural network.
         if self.PATTERN == 'grey-box' and model is None:
-            print("For 'grey-box' feature extraction, please specify a neural network.")
+            nprint("For 'grey-box' feature extraction, please specify a neural network.")
             exit
 
         # Grey-box pattern: get partitions from saliency map.
         if self.PATTERN == 'grey-box':
-            print("Extracting image features using '%s' pattern." % self.PATTERN)
+            nprint("Extracting image features using '%s' pattern." % self.PATTERN)
 
             saliency_map = self.get_saliency_map(image, model)
 
@@ -96,10 +98,10 @@ class FeatureExtraction:
 
         # Black-box pattern: get partitions from key points.
         elif self.PATTERN == 'black-box':
-            print("Extracting image features using '%s' pattern." % self.PATTERN)
+            nprint("Extracting image features using '%s' pattern." % self.PATTERN)
 
             key_points = self.get_key_points(image)
-            print("%s keypoints are found. " % (len(key_points)))
+            nprint("%s keypoints are found. " % (len(key_points)))
 
             partitions = {}
             # For small images, such as MNIST, CIFAR10.
@@ -142,7 +144,7 @@ class FeatureExtraction:
                 return partitions
 
         else:
-            print("Unrecognised feature extraction pattern."
+            nprint("Unrecognised feature extraction pattern."
                   "Try 'black-box' or 'grey-box'.")
 
     # Get saliency map of an image.

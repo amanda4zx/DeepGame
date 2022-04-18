@@ -128,6 +128,7 @@ try:
         else:
             p = Process(target=lowerbound, args=(dataSetName, tau, gameType, image_index, eta, network_type, lock))
             p.start()
+            p.join()
     else:
         print("Unrecognised bound setting.\n"
             "Try 'ub' for upper bound or 'lb' for lower bound.\n")

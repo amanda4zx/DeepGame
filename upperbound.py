@@ -7,6 +7,8 @@ from DataCollection import *
 from multiprocessing import Lock
 # import numpy as np
 
+from basics import *
+
 
 def upperbound(dataSetName, tau, gameType, image_index, eta, network_type, lock):
     start_time = time.time()
@@ -18,7 +20,7 @@ def upperbound(dataSetName, tau, gameType, image_index, eta, network_type, lock)
     lock.acquire()
     NN.load_network()
     lock.release()
-    print("Dataset is %s." % NN.data_set)
+    nprint("Dataset is %s." % NN.data_set)
     NN.model.summary()
 
     lock.acquire()
@@ -30,13 +32,13 @@ def upperbound(dataSetName, tau, gameType, image_index, eta, network_type, lock)
     # groundTruth = dataset.get_output(image_index)
     # groundTruthClass = np.argmax(np.ravel(groundTruth))
     # trueClassStr = NN.get_label(int(groundTruthClass))
-    print("Working on input with index %s, whose class is '%s' and the confidence is %s."
+    nprint("Working on input with index %s, whose class is '%s' and the confidence is %s."
           % (image_index, origClassStr, confident))
-    # print("The ground truth class is '%s'." % trueClassStr)
+    # nprint("The ground truth class is '%s'." % trueClassStr)
     # if origClassStr != trueClassStr:
-    #     print("The classification does not match the ground truth.")
+    #     nprint("The classification does not match the ground truth.")
     #     return
-    print("the second player is %s." % gameType)
+    nprint("the second player is %s." % gameType)
 
     dc = DataCollection("%s_ub_%s_%s_%s_%s_%s_%s" % (dataSetName, gameType, image_index, eta[0], eta[1], tau, network_type))
 
@@ -74,7 +76,7 @@ def upperbound(dataSetName, tau, gameType, image_index, eta, network_type, lock)
                     (_, value) = mctsInstance.sampling(node, availableActions)
                     mctsInstance.backPropagation(node, value)
                 if currentBest > mctsInstance.bestCase[0]:
-                    print("best distance up to now is %s" % (str(mctsInstance.bestCase[0])))
+                    nprint("best distance up to now is %s" % (str(mctsInstance.bestCase[0])))
                     currentBest = mctsInstance.bestCase[0]
                 bestChild = mctsInstance.bestChild(mctsInstance.rootIndex)
 
@@ -89,22 +91,22 @@ def upperbound(dataSetName, tau, gameType, image_index, eta, network_type, lock)
                 
         except KeyboardInterrupt:
             elapsed = time.time() - start_time_all
-            print("\nInterrupted after running for %s minutes\n" % (elapsed/60))
+            nprint("\nInterrupted after running for %s minutes\n" % (elapsed/60))
             dc.addComment("Interrupted after running for %s minutes\n" % (elapsed/60))
             pass    # use the current best manipulation below in the case of interrupt
 
         except ValueError: # no useful action (see usefulAction in CooperativeMCTS.py)
             elapsed = time.time() - start_time_all
-            print("\nNo useful action after running for %s minutes\n" % (elapsed/60))
+            nprint("\nNo useful action after running for %s minutes\n" % (elapsed/60))
             dc.addComment("No useful action after running for %s minutes\n" % (elapsed/60))
             pass
 
 
         (_, bestManipulation) = mctsInstance.bestCase
 
-        print("the number of iterations: %s" % mctsInstance.NITERS)
-        print("the number of sampling: %s" % mctsInstance.numOfSampling)
-        print("the number of adversarial examples: %s\n" % mctsInstance.numAdv)
+        nprint("the number of iterations: %s" % mctsInstance.NITERS)
+        nprint("the number of sampling: %s" % mctsInstance.numOfSampling)
+        nprint("the number of adversarial examples: %s\n" % mctsInstance.numAdv)
         dc.addComment("Number of iterations: %s\n" % mctsInstance.NITERS)
         dc.addComment("Number of sampling: %s\n" % mctsInstance.numOfSampling)
         dc.addComment("Number of adversarial examples: %s\n" % mctsInstance.numAdv)
@@ -119,20 +121,20 @@ def upperbound(dataSetName, tau, gameType, image_index, eta, network_type, lock)
             NN.save_input(image1, path0)
             path0 = "%s_pic/%s_diff.png" % (dataSetName, image_index)
             NN.save_input(np.absolute(image - image1), path0)
-            print("\nfound an adversary image within pre-specified bounded computational resource. "
+            nprint("\nfound an adversary image within pre-specified bounded computational resource. "
                   "The following is its information: ")
-            print("difference between images: %s" % (diffImage(image, image1)))
-            # print("number of adversarial examples found: %s" % mctsInstance.numAdv)
+            nprint("difference between images: %s" % (diffImage(image, image1)))
+            # nprint("number of adversarial examples found: %s" % mctsInstance.numAdv)
 
             l2dist = l2Distance(mctsInstance.image, image1)
             l1dist = l1Distance(mctsInstance.image, image1)
             l0dist = l0Distance(mctsInstance.image, image1)
             percent = diffPercent(mctsInstance.image, image1)
-            print("L2 distance %s" % l2dist)
-            print("L1 distance %s" % l1dist)
-            print("L0 distance %s" % l0dist)
-            print("manipulated percentage distance %s" % percent)
-            print("class is changed into '%s' with confidence %s\n" % (newClassStr, newConfident))
+            nprint("L2 distance %s" % l2dist)
+            nprint("L1 distance %s" % l1dist)
+            nprint("L0 distance %s" % l0dist)
+            nprint("manipulated percentage distance %s" % percent)
+            nprint("class is changed into '%s' with confidence %s\n" % (newClassStr, newConfident))
 
             dc.addRunningTime(time.time() - start_time_all)
             dc.addComment("Found an adversarial example\n")
@@ -148,7 +150,7 @@ def upperbound(dataSetName, tau, gameType, image_index, eta, network_type, lock)
             return time.time() - start_time_all, newConfident, percent, l2dist, l1dist, l0dist, 0
 
         else:
-            print("\nfailed to find an adversary image within pre-specified bounded computational resource. ")
+            nprint("\nfailed to find an adversary image within pre-specified bounded computational resource. ")
             dc.addComment("Failed to find an adversary image within pre-specified bounded computational resource.\n")
             return 0, 0, 0, 0, 0, 0, 0
 
@@ -169,7 +171,7 @@ def upperbound(dataSetName, tau, gameType, image_index, eta, network_type, lock)
                 (_, value) = mctsInstance.sampling(node, availableActions)
                 mctsInstance.backPropagation(node, value)
             if currentBest > mctsInstance.bestCase[0]:
-                print("best distance up to now is %s" % (str(mctsInstance.bestCase[0])))
+                nprint("best distance up to now is %s" % (str(mctsInstance.bestCase[0])))
                 currentBest = mctsInstance.bestCase[0]
                 currentBestIndex += 1
 
@@ -183,10 +185,10 @@ def upperbound(dataSetName, tau, gameType, image_index, eta, network_type, lock)
 
         (bestValue, bestManipulation) = mctsInstance.bestCase
 
-        print("the number of sampling: %s" % mctsInstance.numOfSampling)
-        print("the number of adversarial examples: %s\n" % mctsInstance.numAdv)
+        nprint("the number of sampling: %s" % mctsInstance.numOfSampling)
+        nprint("the number of adversarial examples: %s\n" % mctsInstance.numAdv)
 
-        print("the number of max features is %s" % mctsInstance.bestFeatures()[0])
+        nprint("the number of max features is %s" % mctsInstance.bestFeatures()[0])
         maxfeatures = mctsInstance.bestFeatures()[0]
 
         if bestValue < eta[1]:
@@ -201,26 +203,26 @@ def upperbound(dataSetName, tau, gameType, image_index, eta, network_type, lock)
                 NN.save_input(image1, path0)
                 path0 = "%s_pic/%s_diff.png" % (dataSetName, image_index)
                 NN.save_input(np.absolute(image - image1), path0)
-                print("\nfound an adversary image within pre-specified bounded computational resource. "
+                nprint("\nfound an adversary image within pre-specified bounded computational resource. "
                       "The following is its information: ")
-                print("difference between images: %s" % (diffImage(image, image1)))
+                nprint("difference between images: %s" % (diffImage(image, image1)))
 
-                print("number of adversarial examples found: %s" % mctsInstance.numAdv)
+                nprint("number of adversarial examples found: %s" % mctsInstance.numAdv)
 
                 l2dist = l2Distance(mctsInstance.image, image1)
                 l1dist = l1Distance(mctsInstance.image, image1)
                 l0dist = l0Distance(mctsInstance.image, image1)
                 percent = diffPercent(mctsInstance.image, image1)
-                print("L2 distance %s" % l2dist)
-                print("L1 distance %s" % l1dist)
-                print("L0 distance %s" % l0dist)
-                print("manipulated percentage distance %s" % percent)
-                print("class is changed into '%s' with confidence %s\n" % (newClassStr, newConfident))
+                nprint("L2 distance %s" % l2dist)
+                nprint("L1 distance %s" % l1dist)
+                nprint("L0 distance %s" % l0dist)
+                nprint("manipulated percentage distance %s" % percent)
+                nprint("class is changed into '%s' with confidence %s\n" % (newClassStr, newConfident))
 
                 return time.time() - start_time_all, newConfident, percent, l2dist, l1dist, l0dist, maxfeatures
 
             else:
-                print("\nthe robustness of the (input, model) is under control, "
+                nprint("\nthe robustness of the (input, model) is under control, "
                       "with the first player is able to defeat the second player "
                       "who aims to find adversarial example by "
                       "playing suitable strategies on selecting features. ")
@@ -228,14 +230,14 @@ def upperbound(dataSetName, tau, gameType, image_index, eta, network_type, lock)
 
         else:
 
-            print("\nthe robustness of the (input, model) is under control, "
+            nprint("\nthe robustness of the (input, model) is under control, "
                   "with the first player is able to defeat the second player "
                   "who aims to find adversarial example by "
                   "playing suitable strategies on selecting features. ")
             return 0, 0, 0, 0, 0, 0, 0
 
     else:
-        print("Unrecognised game type. Try 'cooperative' or 'competitive'.")
+        nprint("Unrecognised game type. Try 'cooperative' or 'competitive'.")
 
     runningTime = time.time() - start_time
 

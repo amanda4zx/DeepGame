@@ -17,13 +17,15 @@ from DataSet import *
 from DataCollection import *
 from multiprocessing import Lock
 
+from basics import *
+
 
 def lowerbound(dataset_name, tau, game_type,image_index, eta, network_type, lock):
     NN = NeuralNetwork(dataset_name, network_type)
     lock.acquire()
     NN.load_network()
     lock.release()
-    print("Dataset is %s." % NN.data_set)
+    nprint("Dataset is %s." % NN.data_set)
     NN.model.summary()
 
     lock.acquire()
@@ -32,9 +34,9 @@ def lowerbound(dataset_name, tau, game_type,image_index, eta, network_type, lock
     image = dataset.get_input(image_index)
     (label, confidence) = NN.predict(image)
     label_str = NN.get_label(int(label))
-    print("Working on input with index %s, whose class is '%s' and the confidence is %s."
+    nprint("Working on input with index %s, whose class is '%s' and the confidence is %s."
           % (image_index, label_str, confidence))
-    print("The second player is being %s." % game_type)
+    nprint("The second player is being %s." % game_type)
 
     path = "%s_pic/idx_%s_label_[%s]_with_confidence_%s.png" % (
         dataset_name, image_index, label_str, confidence)
@@ -58,18 +60,18 @@ def lowerbound(dataset_name, tau, game_type,image_index, eta, network_type, lock
             adv_label, adv_confidence = NN.predict(adversary)
             adv_label_str = NN.get_label(int(adv_label))
 
-            print("\nFound an adversary within pre-specified bounded computational resource. "
+            nprint("\nFound an adversary within pre-specified bounded computational resource. "
                   "\nThe following is its information: ")
-            print("difference between images: %s" % (diffImage(image, adversary)))
+            nprint("difference between images: %s" % (diffImage(image, adversary)))
             l2dist = l2Distance(image, adversary)
             l1dist = l1Distance(image, adversary)
             l0dist = l0Distance(image, adversary)
             percent = diffPercent(image, adversary)
-            print("L2 distance %s" % l2dist)
-            print("L1 distance %s" % l1dist)
-            print("L0 distance %s" % l0dist)
-            print("manipulated percentage distance %s" % percent)
-            print("class is changed into '%s' with confidence %s\n" % (adv_label_str, adv_confidence))
+            nprint("L2 distance %s" % l2dist)
+            nprint("L1 distance %s" % l1dist)
+            nprint("L0 distance %s" % l0dist)
+            nprint("manipulated percentage distance %s" % percent)
+            nprint("class is changed into '%s' with confidence %s\n" % (adv_label_str, adv_confidence))
 
             dc.addComment("Found an adversarial example\n")
             dc.addComment("Class is changed into '%s' with confidence %s\n" % (adv_label_str, adv_confidence))
@@ -85,16 +87,16 @@ def lowerbound(dataset_name, tau, game_type,image_index, eta, network_type, lock
             elif eta[0] == 'L2':
                 dist = l2dist
             else:
-                print("Unrecognised distance metric.")
+                nprint("Unrecognised distance metric.")
             path = "%s_pic/idx_%s_modified_diff_%s=%s_time=%s.png" % (
                 dataset_name, image_index, eta[0], dist, elapsed)
             NN.save_input(np.absolute(image - adversary), path)
         else:
             if is_interrupted:
-                print("\nInterrupted after %s minutes\n" % (elapsed/60))
+                nprint("\nInterrupted after %s minutes\n" % (elapsed/60))
                 dc.addComment("Interrupted after %s minutes\n" % (elapsed/60))
             else:
-                print("Adversarial distance exceeds distance budget.")
+                nprint("Adversarial distance exceeds distance budget.")
                 dc.addComment("Adversarial distance exceeds distance budget.\n")
 
             newimage = cooperative.CURRENT_BEST_IMAGE
@@ -104,12 +106,14 @@ def lowerbound(dataset_name, tau, game_type,image_index, eta, network_type, lock
             l0dist = l0Distance(image, newimage)
             percent = diffPercent(image, newimage)
             dc.addComment("Current best safe manipulation has confidence %s\n" % new_confidence)
+            # nprint("difference between images: %s" % (diffImage(image, newimage)))
+            # dc.addComment("Difference between images: %s\n" % (diffImage(image, newimage)))
 
             path = "%s_pic/idx_%s_safe_with_%s_distance_%s.png" % (
                 dataset_name, image_index, eta[0], cooperative.CURRENT_SAFE[-1])
             NN.save_input(newimage, path)
 
-        print("\nNumber of iterations: %s\n" % cooperative.NITERS)
+        nprint("\nNumber of iterations: %s\n" % cooperative.NITERS)
         dc.addComment("Number of iterations: %s\n" % cooperative.NITERS)
         dc.addRunningTime(elapsed)
         dc.addl2Distance(l2dist)
@@ -123,4 +127,4 @@ def lowerbound(dataset_name, tau, game_type,image_index, eta, network_type, lock
         competitive.play_game(image)
 
     else:
-        print("Unrecognised game type. Try 'cooperative' or 'competitive'.")
+        nprint("Unrecognised game type. Try 'cooperative' or 'competitive'.")

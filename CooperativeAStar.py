@@ -42,7 +42,7 @@ class CooperativeAStar:
         self.NITERS = 0
         self.PROGRESS = [(0, 0)]  # pairs of (number of iterations, best bound)
 
-        print("Distance metric %s, with bound value %s." % (self.DIST_METRIC, self.DIST_VAL))
+        nprint("Distance metric %s, with bound value %s." % (self.DIST_METRIC, self.DIST_VAL))
 
     def target_pixels(self, image, pixels):
         # tau = self.TAU
@@ -117,7 +117,7 @@ class CooperativeAStar:
                 self.DIST_EVALUATION.update({self.ADV_MANIPULATION + atomic_manipulations[idx]: estimation})
 
             # self.DIST_EVALUATION.update({self.ADV_MANIPULATION + atomic_manipulations[idx]: estimation})
-        # print("Atomic manipulations of target pixels done.")
+        # nprint("Atomic manipulations of target pixels done.")
 
     # check whether the manipulation has a predecessor that has been expanded
     def pred_expanded(self, atomic):
@@ -143,9 +143,9 @@ class CooperativeAStar:
             atomic_manip_dict[chl] = m
 
         # if expanded:
-        #     print("eliminated a discovered node %s\n" % atomic_manip_dict)
+        #     nprint("eliminated a discovered node %s\n" % atomic_manip_dict)
         # else:
-        #     print("newly discoverd node %s\n" % atomic_manip_dict)
+        #     nprint("newly discoverd node %s\n" % atomic_manip_dict)
 
         return expanded
 
@@ -200,7 +200,7 @@ class CooperativeAStar:
         elif self.DIST_METRIC == 'L2':
             return l2Distance(image1, image2)
         else:
-            print("Unrecognised distance metric. "
+            nprint("Unrecognised distance metric. "
                   "Try 'L0', 'L1', or 'L2'.")
 
     def play_game(self, image):
@@ -214,8 +214,8 @@ class CooperativeAStar:
                 self.target_pixels(new_image, pixels)
 
             self.ADV_MANIPULATION = min(self.DIST_EVALUATION, key=self.DIST_EVALUATION.get)
-            # print("Current best manipulations:", self.ADV_MANIPULATION)
-            # print("%s distance (estimated): %s" % (self.DIST_METRIC, self.DIST_EVALUATION[self.ADV_MANIPULATION]))
+            # nprint("Current best manipulations:", self.ADV_MANIPULATION)
+            # nprint("%s distance (estimated): %s" % (self.DIST_METRIC, self.DIST_EVALUATION[self.ADV_MANIPULATION]))
             self.DIST_EVALUATION.pop(self.ADV_MANIPULATION)
 
             self.NITERS += 1
@@ -225,15 +225,15 @@ class CooperativeAStar:
             for atomic in atomic_list:
                 valid, new_image = self.apply_atomic_manipulation(new_image, atomic)
             dist = self.cal_distance(self.IMAGE, new_image)
-            print("%s distance (actual): %s" % (self.DIST_METRIC, dist))
+            nprint("%s distance (actual): %s" % (self.DIST_METRIC, dist))
 
             new_label, new_confidence = self.MODEL.predict(new_image)
             if self.cal_distance(self.IMAGE, new_image) > self.DIST_VAL:
-                print("Adversarial distance exceeds distance budget.")
+                nprint("Adversarial distance exceeds distance budget.")
                 self.ADVERSARY_FOUND = False
                 break
             elif new_label != self.LABEL:
-                print("Adversarial image is found.")
+                nprint("Adversarial image is found.")
                 self.ADVERSARY_FOUND = True
                 self.ADVERSARY = new_image
                 break
@@ -243,9 +243,9 @@ class CooperativeAStar:
                 self.CURRENT_SAFE.append(dist)
                 self.CURRENT_BEST_IMAGE = new_image
                 self.PROGRESS.append((self.NITERS, dist))
-                # print("%s distance (actual): %s" % (self.DIST_METRIC, dist))
-                print("Current best manipulations: ", self.ADV_MANIPULATION)
-                print("Number of iterations: ", self.NITERS)
+                # nprint("%s distance (actual): %s" % (self.DIST_METRIC, dist))
+                nprint("Current best manipulations: {}".format(self.ADV_MANIPULATION))
+                nprint("Number of iterations: {}".format(self.NITERS))
                 # path = "%s_pic/idx_%s_Safe_currentBest.png" % (self.DATASET, self.IDX)
                 path = "%s_pic/idx_%s_Safe_currentBest_%s.png" % (self.DATASET, self.IDX, len(self.CURRENT_SAFE) - 1)
                 self.MODEL.save_input(new_image, path)

@@ -21,6 +21,7 @@ from GameMoves import *
 MCTS_multi_samples = 3
 effectiveConfidenceWhenChanging = 0.0
 explorationRate = math.sqrt(2)
+nprint("Exploration-exploitation ratio: %s" % explorationRate)
 
 
 class MCTSCooperative:
@@ -98,9 +99,14 @@ class MCTSCooperative:
         for i in range(len(actions)):
             ast = {}
             for j in range(len(actions[i])):
-                ast[j] = actions[i][j]
+                if(i == 0):
+                    # the exact representation of features does not matter
+                    ast[j] = j
+                else:
+                    ast[j] = actions[i][j]
             self.actions[i] = ast
-        nprint("%s actions have been initialised." % (len(self.actions)))
+
+        nprint("%s actions have been initialised." % (len(self.actions[0])))
 
     def initialiseLeafNode(self, index, parentIndex, newAtomicManipulation):
         nprint("initialising a leaf node %s from the node %s" % (index, parentIndex))
@@ -135,7 +141,7 @@ class MCTSCooperative:
             player = "the first player"
         else:
             player = "the second player"
-        print("%s making a move into the new root %s, whose value is %s and visited number is %s" % (
+        nprint("%s making a move into the new root %s, whose value is %s and visited number is %s" % (
             player, newRootIndex, self.cost[newRootIndex], self.numberOfVisited[newRootIndex]))
         self.removeChildren(self.rootIndex, [newRootIndex])
         self.rootIndex = newRootIndex
@@ -310,8 +316,8 @@ class MCTSCooperative:
             # nprint("current best %s, considered to be replaced by %s" % (self.bestCase[0], dist))
             nprint("current best %s, found another adversarial example at distance %s" % (self.bestCase[0], dist))
             if self.bestCase[0] > dist:
-                print("update best case from %s to %s" % (self.bestCase[0], dist))
-                print("number of iterations is %s" % self.NITERS)
+                nprint("update best case from %s to %s" % (self.bestCase[0], dist))
+                nprint("number of iterations is %s" % self.NITERS)
                 self.numConverge += 1
                 self.bestCase = (dist, self.atomicManipulationPath)
                 path0 = "%s_pic/%s_Unsafe_currentBest_%s.png" % (self.data_set, self.image_index, self.numConverge)

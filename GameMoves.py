@@ -39,6 +39,7 @@ class GameMoves:
         feature_extraction = FeatureExtraction(pattern='grey-box')
         kps = feature_extraction.get_key_points(self.image, num_partition=self.num_partition)
         partitions = feature_extraction.get_partitions(self.image, self.model, num_partition=self.num_partition)
+        nprint("Number of partitions: %s" % len(partitions))
         # for k in range(self.num_partition):
         #     print(len(partitions[k]))
 
@@ -77,7 +78,7 @@ class GameMoves:
 
         # to compute a partition of the pixels, for an image classification task 
         # partitions = self.getPartition(image1, kps)
-        print("The pixels are partitioned with respect to keypoints.")
+        nprint("The pixels are partitioned with respect to keypoints.")
 
         # construct moves according to the obtained the partitions 
         num_of_manipulations = 0
@@ -118,7 +119,7 @@ class GameMoves:
 
         # index-0 keeps the keypoints, actual actions start from 1
         actions[0] = kp2
-        print("the number of all manipulations initialised: %s\n" % num_of_manipulations)
+        nprint("the number of all manipulations initialised: %s\n" % num_of_manipulations)
         self.moves = actions
 
     def applyManipulation(self, image, manipulation):

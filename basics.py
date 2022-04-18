@@ -55,7 +55,8 @@ def mergeTwoDicts(x, y):
 
 # Print progress in games
 def nprint(str):
-    print(str)
+    pid = os.getpid()
+    print("%s:\t%s" % (pid,str))
     return 0
 
 

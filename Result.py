@@ -1,4 +1,4 @@
-# Extract data from a file containing the experiment results
+# Extract data from a file containing the experiment log
 from FeatureExtraction import *
 from DataSet import *
 from NeuralNetwork import *
@@ -54,12 +54,15 @@ class Result:
                 diff0 = [int(s.strip('(),')) for s in diff0]
                 self.diffBetweenImages = [(diff0[i], diff0[i+1], diff0[i+2]) for i in range(0, len(diff0), 3)]
         else:
+            self.iters = int(self.extract('Number of iterations: '))
+
+            self.runningTime = float(self.extract('Running time: '))
+
             self.progress = []
-            if(self.foundAdversary):
-                progress0 = self.extract('Progress: ')
-                progress0 = ''.join(filter(lambda s: s not in "()[]\n", progress0)).split(', ')
-                for i in range(0, len(progress0), 2):
-                    self.progress.append((int(progress0[i]), float(progress0[i+1])))
+            progress0 = self.extract('Progress: ')
+            progress0 = ''.join(filter(lambda s: s not in "()[]\n", progress0)).split(', ')
+            for i in range(0, len(progress0), 2):
+                self.progress.append((int(progress0[i]), float(progress0[i+1])))
     
     def extract(self, s):
         for l in self.lines:
@@ -80,27 +83,30 @@ class Result:
                 same = False
         return same
 
-#TODO: parameterise the arguments.
-    def plotManipulatedFeatures(self, pattern='grey-box', num_partition=10):
+    def plotFeatures(self, pattern='grey-box', num_partitions=10):
         ex = FeatureExtraction(pattern)
         dataset = DataSet(self.dataSetName, 'testing')
         self.image = dataset.get_input(self.image_index)
         self.nn = NeuralNetwork(self.dataSetName, self.network_type)
         self.nn.load_network()
-        kps = ex.get_key_points(self.image, num_partition)
-        partitions = ex.get_partitions(self.image, self.nn, num_partition)
+        kps = ex.get_key_points(self.image, num_partitions)
+        partitions = ex.get_partitions(self.image, self.nn, num_partitions)
         ex.plot_saliency_map(self.image, partitions, 'dataCollection/featMap.jpg')
+
+    def plotManipulatedFeatures(self, pattern='grey-box', num_partitions=10):
+        self.plotFeatures(pattern, num_partitions)
         num_manips = {}
         for (x, y, c) in self.diffBetweenImages:
             if (x, y) in num_manips.keys():
                 num_manips[(x,y)] += 1
             else:
                 num_manips[(x,y)] = 1
+        # Show the number of manipulations at each manipulated pixel
         for (x, y) in num_manips.keys():
             plt.text(x, y, num_manips[(x,y)],ha="center", va="center", color="w")
-        plt.savefig('dataCollection/featMap.jpg')
+        # plt.savefig('dataCollection/featMap.jpg')
 
-r = Result('dataCollection/','gtsrb', 'ub', float(1), 'cooperative', 8432, ('L2', float(10)), 'seq')
+# r = Result('dataCollection/','gtsrb', 'ub', float(1), 'cooperative', 8432, ('L2', float(10)), 'seq')
 # print(r.iters)
 # print(r.numOfSampling)
 # print(r.foundAdversary)
@@ -111,5 +117,5 @@ r = Result('dataCollection/','gtsrb', 'ub', float(1), 'cooperative', 8432, ('L2'
 # print(r.l0)
 # print(r.numOfRemovals)
 # print(r.progress)
-print(r.diffBetweenImages)
-r.plotManipulatedFeatures()
+# print(r.diffBetweenImages)
+# r.plotManipulatedFeatures()
