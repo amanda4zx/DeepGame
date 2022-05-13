@@ -16,15 +16,15 @@ def plotBasic(dataSetName, bound, tau, gameType, image_index, eta, featureExtrac
     cbamRes = Result(basicDir, dataSetName, bound, tau, gameType, image_index, eta, 'cbam_spatial_attn')
     minIters = min(seqRes.iters, selfRes.iters, cbamRes.iters)
     plt.clf()
-    plotList(preprocess(seqRes.progress, minIters), 'seq', 'orange')
+    plotList(preprocess(seqRes.progress, minIters), 'pure', 'orange')
     plotList(preprocess(selfRes.progress, minIters), 'self', 'blue')
-    plotList(preprocess(cbamRes.progress, minIters), 'cbam', 'green')
+    plotList(preprocess(cbamRes.progress, minIters), 'CBAM', 'green')
 
     plt.legend()
-    plt.yscale('log')
+    # plt.yscale('log')
     plt.ylabel(eta[0] + ' distance')
-    plt.xlabel('iterations')
-    plt.title('%s_%s_%s_%s_%sfeatures_%sratio' % (dataSetName, image_index, bound, featureExtraction, numOfFeatures, explorationRate))
+    plt.xlabel('Iterations')
+    # plt.title('%s_%s_%s_%s_%sfeatures_%sratio' % (dataSetName, image_index, bound, featureExtraction, numOfFeatures, explorationRate))
     path = '%sanalysis/%s_%s_%s_%s_%s/' % (dataFolder, dataSetName, featureExtraction, numOfFeatures, explorationRate, bound)
     assure_path_exists(path)
     plt.savefig(path + '%s' % image_index)
@@ -193,8 +193,9 @@ def plotManipulatedFeatures(dataSetName, bound, tau, gameType, image_index, eta,
     elif featureExtraction == 'sift':
         pattern = 'black-box'
     plt.clf()
-    res.plotManipulatedFeatures(pattern, numOfFeatures)
-    plt.title('%s_%s_%s_%s_%sfeatures_%sratio' % (dataSetName, image_index, bound, featureExtraction, numOfFeatures, explorationRate))
+    # res.plotManipulatedFeatures(pattern, numOfFeatures)
+    res.plotFeatures(pattern, numOfFeatures)
+    # plt.title('%s_%s_%s_%s_%sfeatures_%sratio' % (dataSetName, image_index, bound, featureExtraction, numOfFeatures, explorationRate))
     path = '%sfeaturePlots/%s_%s_%s_%s_%s/' % (dataFolder, dataSetName, featureExtraction, numOfFeatures, explorationRate, bound)
     assure_path_exists(path)
     plt.savefig(path + '%s_%s' % (image_index, network_type))
@@ -250,6 +251,52 @@ def plotAllBasic(dataSetName, bound, tau, gameType, eta, featureExtraction, numO
         except:
             print("Some model has no progress for image index %s" % idx)
 
+# Count the number of elements in each category, with the count for an element that occurs in multiple categories split evenly among them
+def tally(dictOfLists):
+    counts = {}
+    allIds = []
+    for k in dictOfLists.keys():
+        counts[k] = 0
+        for idx in dictOfLists[k]:
+            if(idx not in allIds):
+                allIds.append(idx)
+    for idx in allIds:
+        occurrences = 0
+        keysContainingIdx = []
+        for k in dictOfLists.keys():
+            if(idx in dictOfLists[k]):
+                occurrences += 1
+                keysContainingIdx.append(k)
+        for k in keysContainingIdx:
+            counts[k] += 1/occurrences
+    return counts, len(allIds)
+    # for(idx in seqIds):
+    #     if(idx in selfIds and idx in cbamIds):
+    #         counts['seq'] += 1/3
+    #         counts['self_attn'] += 1/3
+    #         counts['cbam_spatial_attn'] += 1/3
+    #     elif(idx in selfIds):
+    #         counts['seq'] += 1/2
+    #         counts['self_attn'] += 1/2
+    #     elif(idx in cbamIds):
+    #         counts['seq'] += 1/2
+    #         counts['cbam_spatial_attn'] += 1/2
+    #     else:
+    #         counts['seq'] += 1
+    # for(idx in selfIds):
+    #     if(idx in seqIds):
+    #         continue
+    #     if(idx in cbamIds):
+    #         counts['self_attn'] += 1/2
+    #         counts['cbam_spatial_attn'] += 1/2
+    #     else:
+    #         counts['self_attn'] += 1
+    # for(idx in cbamIds):
+    #     if(idx in seqIds or idx in selfIds):
+    #         continue
+    #     counts['cbam_spatial_attn'] += 1
+    return counts
+
 # collate data about which model obtained the best bounds for all input samples
 def collateAllBestBounds(dataSetName, bound, tau, gameType, eta, featureExtraction, numOfFeatures, explorationRate):
     ids = getSampledIndices(dataSetName, bound, tau, gameType, eta, featureExtraction, numOfFeatures, explorationRate)
@@ -257,7 +304,6 @@ def collateAllBestBounds(dataSetName, bound, tau, gameType, eta, featureExtracti
     bestBoundIds = {'seq':[], 'self_attn':[], 'cbam_spatial_attn':[]}
     mostAdvIds = {'seq':[], 'self_attn':[], 'cbam_spatial_attn':[]}
     classId = 0
-    total = 0
     for idx in ids:
         try:
             numBestIters, bestBoundModels, mostAdvModels = collateBestBounds(dataSetName, bound, tau, gameType, idx, eta, featureExtraction, numOfFeatures, explorationRate)
@@ -271,11 +317,11 @@ def collateAllBestBounds(dataSetName, bound, tau, gameType, eta, featureExtracti
                 bestBoundIds[network_type].append((classId, idx))
             for network_type in mostAdvModels:
                 mostAdvIds[network_type].append((classId, idx))
-            total += 1
         except TypeError:
             print("Some model has no progress for image index %s" % idx)
         classId += 1
 
+    assure_path_exists('%sanalysis/collated/' % dataFolder)
     filename = '%sanalysis/collated/%s_%s_%s_%s_%s.txt' % (dataFolder, dataSetName, featureExtraction, numOfFeatures, explorationRate, bound)
     f = open(filename, "w")
     f.write("Classes and indices where each model had best bounds in the most iterations:\n")
@@ -289,27 +335,21 @@ def collateAllBestBounds(dataSetName, bound, tau, gameType, eta, featureExtracti
         for k in mostAdvIds.keys():
             f.write("%s: %s\n" % (k, mostAdvIds[k]))
 
-    seqLen1 = len(mostBestItersIds['seq'])
-    selfLen1 = len(mostBestItersIds['self_attn'])
-    cbamLen1 = len(mostBestItersIds['cbam_spatial_attn'])
-    f.write("\nPercentage of times seq was the best in number of best iterations: %s\n" % (seqLen1/total))
-    f.write("Percentage of times self_attn was the best in number of best iterations: %s\n" % (selfLen1/total))
-    f.write("Percentage of times cbam_spatial_attn was the best in number of best iterations: %s\n" % (cbamLen1/total))
+    counts, total = tally(mostBestItersIds)
+    f.write("\nPercentage of times seq was the best in number of best iterations: %s\n" % (counts['seq']/total))
+    f.write("Percentage of times self_attn was the best in number of best iterations: %s\n" % (counts['self_attn']/total))
+    f.write("Percentage of times cbam_spatial_attn was the best in number of best iterations: %s\n" % (counts['cbam_spatial_attn']/total))
 
-    seqLen2 = len(bestBoundIds['seq'])
-    selfLen2 = len(bestBoundIds['self_attn'])
-    cbamLen2 = len(bestBoundIds['cbam_spatial_attn'])
-    f.write("\nPercentage of times seq obtained the best bounds in the end: %s\n" % (seqLen2/total))
-    f.write("Percentage of times self_attn obtained the best bounds in the end: %s\n" % (selfLen2/total))
-    f.write("Percentage of times cbam_spatial_attn obtained the best bounds in the end: %s\n" % (cbamLen2/total))
+    counts, total = tally(bestBoundIds)
+    f.write("\nPercentage of times seq obtained the best bounds in the end: %s\n" % (counts['seq']/total))
+    f.write("Percentage of times self_attn obtained the best bounds in the end: %s\n" % (counts['self_attn']/total))
+    f.write("Percentage of times cbam_spatial_attn obtained the best bounds in the end: %s\n" % (counts['cbam_spatial_attn']/total))
 
     if(bound == 'ub'):
-        seqLen3 = len(mostAdvIds['seq'])
-        selfLen3 = len(mostAdvIds['self_attn'])
-        cbamLen3 = len(mostAdvIds['cbam_spatial_attn'])
-        f.write("\nPercentage of times seq obtained the most adversarial examples: %s\n" % (seqLen3/total))
-        f.write("Percentage of times self_attn obtained the most adversarial examples: %s\n" % (selfLen3/total))
-        f.write("Percentage of times cbam_spatial_attn obtained the most adversarial examples: %s\n" % (cbamLen3/total))
+        counts, total = tally(mostAdvIds)
+        f.write("\nPercentage of times seq obtained the most adversarial examples: %s\n" % (counts['seq']/total))
+        f.write("Percentage of times self_attn obtained the most adversarial examples: %s\n" % (counts['self_attn']/total))
+        f.write("Percentage of times cbam_spatial_attn obtained the most adversarial examples: %s\n" % (counts['cbam_spatial_attn']/total))
     f.close()
 
 # collate data about which number of features obtained the best bounds for all input samples for a model
@@ -318,7 +358,6 @@ def collateAllForFeatures(dataSetName, bound, tau, gameType, eta, featureExtract
     nums = [2, 4, 6, 8, 10]
     bestBoundIds = {0:[], 1:[], 2:[], 3:[], 4:[]}
     mostAdvIds = {0:[], 1:[], 2:[], 3:[], 4:[]}
-    total = 0
     classId = 0
     for idx in ids:
         try:
@@ -327,7 +366,6 @@ def collateAllForFeatures(dataSetName, bound, tau, gameType, eta, featureExtract
                 bestBoundIds[numId].append((classId, idx))
             for numId in mostAdvNums:
                 mostAdvIds[numId].append((classId, idx))
-            total += 1
         except TypeError:
             print("Some model has no progress for image index %s" % idx)
         classId += 1
@@ -343,13 +381,13 @@ def collateAllForFeatures(dataSetName, bound, tau, gameType, eta, featureExtract
 
     f.write("\n")
 
-    lens = [len(bestBoundIds[i]) for i in range(len(nums))]
+    counts, total = tally(bestBoundIds)
     for i in range(len(nums)):
-        f.write("Percentage of times %s was the best in the final bound: %s\n" % (nums[i], (lens[i]/total)))
-    lens = [len(mostAdvIds[i]) for i in range(len(nums))]
+        f.write("Percentage of times %s was the best in the final bound: %s\n" % (nums[i], (counts[i]/total)))
+    counts, total = tally(mostAdvIds)
     f.write("\n")
     for i in range(len(nums)):
-        f.write("Percentage of times %s had the most adversarial examples: %s\n" % (nums[i], (lens[i]/total)))
+        f.write("Percentage of times %s had the most adversarial examples: %s\n" % (nums[i], (counts[i]/total)))
 
 # collate data about which ratio obtained the best bounds for all input samples for a model
 def collateAllForRatios(dataSetName, bound, tau, gameType, eta, featureExtraction, numOfFeatures, network_type):
@@ -357,7 +395,6 @@ def collateAllForRatios(dataSetName, bound, tau, gameType, eta, featureExtractio
     ratios = [0.5, 1.0, 1.41, 2.0, 4.0]
     bestBoundIds = {0:[], 1:[], 2:[], 3:[], 4:[]}
     mostAdvIds = {0:[], 1:[], 2:[], 3:[], 4:[]}
-    total = 0
     classId = 0
     for idx in ids:
         try:
@@ -366,7 +403,6 @@ def collateAllForRatios(dataSetName, bound, tau, gameType, eta, featureExtractio
                 bestBoundIds[ratioId].append((classId, idx))
             for ratioId in mostAdvRatios:
                 mostAdvIds[ratioId].append((classId, idx))
-            total += 1
         except TypeError:
             print("Some model has no progress for image index %s" % idx)
         classId += 1
@@ -382,13 +418,13 @@ def collateAllForRatios(dataSetName, bound, tau, gameType, eta, featureExtractio
 
     f.write("\n")
 
-    lens = [len(bestBoundIds[i]) for i in range(len(ratios))]
+    counts, total = tally(bestBoundIds)
     for i in range(len(ratios)):
-        f.write("Percentage of times %s was the best in the final bound: %s\n" % (ratios[i], (lens[i]/total)))
-    lens = [len(mostAdvIds[i]) for i in range(len(ratios))]
+        f.write("Percentage of times %s was the best in the final bound: %s\n" % (ratios[i], (counts[i]/total)))
+    counts, total = tally(mostAdvIds)
     f.write("\n")
     for i in range(len(ratios)):
-        f.write("Percentage of times %s had the most adversarial examples: %s\n" % (ratios[i], (lens[i]/total)))
+        f.write("Percentage of times %s had the most adversarial examples: %s\n" % (ratios[i], (counts[i]/total)))
 
 # collate data about which feature extraction method obtained the best bounds for all input samples for a model
 def collateAllForExtractions(dataSetName, bound, tau, gameType, eta, numOfFeatures, explorationRate, network_type):
@@ -421,13 +457,13 @@ def collateAllForExtractions(dataSetName, bound, tau, gameType, eta, numOfFeatur
 
     f.write("\n")
 
-    lens = [len(bestBoundIds[i]) for i in range(len(extractions))]
+    counts, total = tally(bestBoundIds)
     for i in range(len(extractions)):
-        f.write("Percentage of times %s was the best in the final bound: %s\n" % (extractions[i], (lens[i]/total)))
-    lens = [len(mostAdvIds[i]) for i in range(len(extractions))]
+        f.write("Percentage of times %s was the best in the final bound: %s\n" % (extractions[i], (counts[i]/total)))
+    counts, total = tally(mostAdvIds)
     f.write("\n")
     for i in range(len(extractions)):
-        f.write("Percentage of times %s had the most adversarial examples: %s\n" % (extractions[i], (lens[i]/total)))
+        f.write("Percentage of times %s had the most adversarial examples: %s\n" % (extractions[i], (counts[i]/total)))
 
 
 def plotAllManipulatedFeatures(dataSetName, bound, tau, gameType, eta, featureExtraction, numOfFeatures, explorationRate):
@@ -438,3 +474,83 @@ def plotAllManipulatedFeatures(dataSetName, bound, tau, gameType, eta, featureEx
                 plotManipulatedFeatures(dataSetName, bound, tau, gameType, idx, eta, featureExtraction, numOfFeatures, explorationRate, network_type)
             except:
                 print("%s has no progress for image index %s" % (network_type, idx))
+
+# Plot the convergence trend of both upper bounds and lower bounds in the same axes
+def plotBothBasic(dataSetName, bound, tau, gameType, image_index, eta, featureExtraction, numOfFeatures, explorationRate):
+    basicDir = getDir(dataSetName, 'ub', tau, gameType, eta, featureExtraction, numOfFeatures, explorationRate)
+    seqRes = Result(basicDir, dataSetName, 'ub', tau, gameType, image_index, eta, 'seq')
+    selfRes = Result(basicDir, dataSetName, 'ub', tau, gameType, image_index, eta, 'self_attn')
+    cbamRes = Result(basicDir, dataSetName, 'ub', tau, gameType, image_index, eta, 'cbam_spatial_attn')
+    minIters = min(seqRes.iters, selfRes.iters, cbamRes.iters)
+    # plotList(preprocess(seqRes.progress, minIters), 'pure', 'orange')
+    # plotList(preprocess(selfRes.progress, minIters), 'self', 'blue')
+    # plotList(preprocess(cbamRes.progress, minIters), 'CBAM', 'green')
+
+    plt.yscale('log')
+    fig=plt.figure()
+    ax=fig.add_subplot(111, label="1")
+    ax2=fig.add_subplot(111, label="2", frame_on=False)
+    ls = preprocess(seqRes.progress, minIters)
+    xs = [x[0] for x in ls]
+    ys = [x[1] for x in ls]
+    ax.plot(xs, ys, label='pure', color='orange')
+    ls = preprocess(selfRes.progress, minIters)
+    xs = [x[0] for x in ls]
+    ys = [x[1] for x in ls]
+    ax.plot(xs, ys, label='self', color='blue')
+    ls = preprocess(cbamRes.progress, minIters)
+    xs = [x[0] for x in ls]
+    ys = [x[1] for x in ls]
+    ax.plot(xs, ys, label='CBAM', color='green')
+    ax.set_ylabel(eta[0] + ' distance (upper bound)')
+    ax.set_xlabel('Number of iterations of MCTS')
+    
+    # ax.set_yscale('log')
+    # ax2.set_yscale('log')
+    ax.tick_params(axis='x', colors="C0")
+    ax.tick_params(axis='y', colors="C0")
+
+
+
+    tau = 0.01
+    basicDir = getDir(dataSetName, 'lb', tau, gameType, eta, featureExtraction, numOfFeatures, explorationRate)
+    seqRes = Result(basicDir, dataSetName, 'lb', tau, gameType, image_index, eta, 'seq')
+    selfRes = Result(basicDir, dataSetName, 'lb', tau, gameType, image_index, eta, 'self_attn')
+    cbamRes = Result(basicDir, dataSetName, 'lb', tau, gameType, image_index, eta, 'cbam_spatial_attn')
+    minIters = min(seqRes.iters, selfRes.iters, cbamRes.iters)
+    plotList(preprocess(seqRes.progress, minIters), None, 'orange')
+    plotList(preprocess(selfRes.progress, minIters), None, 'blue')
+    plotList(preprocess(cbamRes.progress, minIters), None, 'green')
+
+    ls = preprocess(seqRes.progress, minIters)
+    xs = [x[0] for x in ls]
+    ys = [x[1] for x in ls]
+    ax2.plot(xs, ys, label='pure', color='orange')
+    ls = preprocess(selfRes.progress, minIters)
+    xs = [x[0] for x in ls]
+    ys = [x[1] for x in ls]
+    ax2.plot(xs, ys, label='self', color='blue')
+    ls = preprocess(cbamRes.progress, minIters)
+    xs = [x[0] for x in ls]
+    ys = [x[1] for x in ls]
+    ax2.plot(xs, ys, label='CBAM', color='green')
+
+    ax2.set_ylabel(eta[0] + ' distance (lower bound)')
+    ax2.set_xlabel('Number of iterations of A* Search')
+    ax2.tick_params(axis='x', colors="C1")
+    ax2.tick_params(axis='y', colors="C1")
+    ax2.xaxis.tick_top()
+    ax2.yaxis.tick_right()
+    ax2.yaxis.set_label_position('right')
+    ax2.xaxis.set_label_position('top')
+    ax.set_ylim([-10,10])
+    ax2.set_ylim([0,0.015])
+
+    ax.legend()
+    # plt.title('%s_%s_%s_%s_%sfeatures_%sratio' % (dataSetName, image_index, bound, featureExtraction, numOfFeatures, explorationRate))
+    path = '%sanalysis/%s_%s_%s_%s_%s/' % (dataFolder, dataSetName, featureExtraction, numOfFeatures, explorationRate, bound)
+    assure_path_exists(path)
+    # plt.savefig(path + '%s' % image_index)
+    plt.show()
+
+plotBothBasic('gtsrb', 'ub', float(1), 'cooperative', 7268, ('L2', float(10)), 'saliency', 10, 1.41)
